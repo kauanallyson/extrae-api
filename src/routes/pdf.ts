@@ -8,7 +8,7 @@ const pdfSchema = z.object({
 	}),
 });
 
-export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
+export const pdfRoutes = new Elysia({ prefix: "/extrair-pdf" }).post(
 	"/",
 	async ({ body: { pdf } }) => {
 		const arrayBuffer = await pdf.arrayBuffer();
@@ -22,6 +22,5 @@ export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
 	},
 	{
 		body: pdfSchema,
-		type: "formdata",
 	},
 );
