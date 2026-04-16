@@ -1,15 +1,30 @@
 {
-  "name": "extrae-api",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "elysia": "latest"
-  },
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js"
+	"name": "extrae-api",
+	"version": "1.0.50",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "bun run --watch src/index.ts",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:pull": "drizzle-kit pull",
+		"db:studio": "drizzle-kit studio"
+	},
+	"dependencies": {
+		"@elysiajs/openapi": "^1.4.14",
+		"dotenv": "^17.4.2",
+		"drizzle-orm": "^0.45.2",
+		"elysia": "1.4.28",
+		"extrae-api": ".",
+		"pg": "^8.20.0",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.12",
+		"@types/pg": "^8.20.0",
+		"bun-types": "latest",
+		"drizzle-kit": "^0.31.10",
+		"tsx": "^4.21.0"
+	},
+	"module": "src/index.js"
 }
