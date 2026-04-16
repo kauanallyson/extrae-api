@@ -16,11 +16,13 @@
 		"drizzle-orm": "^0.45.2",
 		"elysia": "1.4.28",
 		"extrae-api": ".",
+		"pdf-parse": "^2.4.5",
 		"pg": "^8.20.0",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.12",
+		"@types/pdf-parse": "^1.1.5",
 		"@types/pg": "^8.20.0",
 		"bun-types": "latest",
 		"drizzle-kit": "^0.31.10",
