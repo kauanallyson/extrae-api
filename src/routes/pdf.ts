@@ -1,14 +1,8 @@
 import Elysia from "elysia";
-import { z } from "zod";
 import { PDFParse } from "pdf-parse";
+import { z } from "zod";
 
-const pdfSchema = z.object({
-	pdf: z.instanceof(File).refine((file) => file.type === "application/pdf", {
-		message: "O arquivo deve ser um pdf",
-	}),
-});
-
-export const pdfRoutes = new Elysia({ prefix: "/extrair-pdf" }).post(
+export const pdfRoutes = new Elysia({ prefix: "/extrair-texto-pdf" }).post(
 	"/",
 	async ({ body: { pdf } }) => {
 		const arrayBuffer = await pdf.arrayBuffer();
@@ -21,6 +15,12 @@ export const pdfRoutes = new Elysia({ prefix: "/extrair-pdf" }).post(
 		return { text: result.text };
 	},
 	{
-		body: pdfSchema,
+		body: z.object({
+			pdf: z
+				.instanceof(File)
+				.refine((file) => file.type === "application/pdf", {
+					message: "O arquivo deve ser um pdf",
+				}),
+		}),
 	},
 );
