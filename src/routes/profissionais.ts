@@ -1,13 +1,13 @@
 import Elysia from "elysia";
-import { db } from "../db";
+import { db } from "@/db";
 import {
 	insertProfissionalSchema,
 	profissionais,
 	updateProfissionalSchema,
-} from "../db/schema/profissionais";
+} from "@/db/schema/profissionais";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { isValidCnpj, isValidCpf } from "../lib/cpf-cnpj";
+import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
 
 export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 	// get all

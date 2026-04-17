@@ -1,8 +1,8 @@
 import Elysia from "elysia";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import { openai } from "../lib/openai";
-import { SYSTEM_PROMPT } from "../lib/prompt";
+import { openai } from "@/lib/ai/openai";
+import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 
 const laudoSchema = z.object({
 	// dados para rae

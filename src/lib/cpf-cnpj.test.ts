@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isValidCnpj, isValidCpf } from "./cpf-cnpj";
+import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
 
 describe("Validação de CPF", () => {
 	test("deve retornar true para um CPF válido", () => {
