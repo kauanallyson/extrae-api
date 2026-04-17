@@ -8,12 +8,15 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:pull": "drizzle-kit pull",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"lint": "biome lint",
+		"format": "biome format --write"
 	},
 	"dependencies": {
 		"@elysiajs/openapi": "^1.4.14",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
+		"drizzle-zod": "^0.8.3",
 		"elysia": "1.4.28",
 		"extrae-api": ".",
 		"openai": "^6.34.0",
