@@ -1,31 +1,19 @@
-FROM oven/bun AS build
+FROM oven/bun:alpine
 
 WORKDIR /app
 
-COPY package.json package.json
-COPY bun.lock bun.lock
+# Copy configuration files
+COPY package.json bun.lock tsconfig.json drizzle.config.ts ./
 
+# Install dependencies
 RUN bun install
 
+# Copy source code and migrations
 COPY ./src ./src
+COPY ./drizzle ./drizzle
 
 ENV NODE_ENV=production
 
-RUN bun build \
-    --compile \
-    --minify-whitespace \
-    --minify-syntax \
-    --outfile server \
-    src/index.ts
-
-FROM gcr.io/distroless/base
-
-WORKDIR /app
-
-COPY --from=build /app/server server
-
-ENV NODE_ENV=production
-
-CMD ["./server"]
+CMD ["bun", "run", "src/index.ts"]
 
 EXPOSE 3000

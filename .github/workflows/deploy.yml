@@ -28,6 +28,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            cp ~/.env ~/extrae-api/.env || true
             cd ~/extrae-api
             docker compose down
             docker compose up -d --build
