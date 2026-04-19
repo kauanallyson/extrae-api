@@ -1,20 +1,20 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1776454611083,
-      "tag": "0000_aromatic_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776565223783,
-      "tag": "0001_rapid_paibok",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1776454611083,
+			"tag": "0000_aromatic_slayback",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1776565223783,
+			"tag": "0001_rapid_paibok",
+			"breakpoints": true
+		}
+	]
 }

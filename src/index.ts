@@ -7,13 +7,13 @@ import { excelRoutes } from "./routes/excel";
 import { env } from "@/env";
 
 const app = new Elysia()
-	.use(openapi())
-	.use(pdfRoutes)
-	.use(laudoRoutes)
-	.use(profissionaisRoutes)
-	.use(excelRoutes)
-	.listen(env.PORT);
+  .use(openapi())
+  .use(pdfRoutes)
+  .use(laudoRoutes)
+  .use(profissionaisRoutes)
+  .use(excelRoutes)
+  .listen(env.PORT);
 
 console.log(
-	`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
+  `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
 );
