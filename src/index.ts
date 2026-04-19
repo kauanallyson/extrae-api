@@ -1,9 +1,11 @@
-import { Elysia } from "elysia";
+import Elysia from "elysia";
+import openapi from "@elysiajs/openapi";
 import { pdfRoutes } from "./routes/pdf";
 import { laudoRoutes } from "./routes/laudo";
 import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
+	.use(openapi())
 	.use(pdfRoutes)
 	.use(laudoRoutes)
 	.use(profissionaisRoutes)

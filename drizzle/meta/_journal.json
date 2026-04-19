@@ -1,20 +1,13 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1776359329076,
-      "tag": "0000_greedy_roulette",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776436252705,
-      "tag": "0001_huge_veda",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1776454611083,
+			"tag": "0000_aromatic_slayback",
+			"breakpoints": true
+		}
+	]
 }

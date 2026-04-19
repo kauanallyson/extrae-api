@@ -3,6 +3,7 @@ import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
+import { betterAuthPlugin } from "@/middleware/better-auth";
 
 const laudoSchema = z.object({
 	// dados para rae
@@ -51,35 +52,38 @@ const laudoSchema = z.object({
 
 export type LaudoExtraido = z.infer<typeof laudoSchema>;
 
-export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" }).post(
-	"/",
-	async ({ body: { laudoText } }) => {
-		const response = await openai.chat.completions.create({
-			model: "gpt-4o-mini",
-			temperature: 0.1, // menos criativo o possivel
-			messages: [
-				{ role: "system", content: SYSTEM_PROMPT },
-				{
-					role: "user",
-					content: `
+export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" })
+	.use(betterAuthPlugin)
+	.post(
+		"/",
+		async ({ body: { laudoText } }) => {
+			const response = await openai.chat.completions.create({
+				model: "gpt-4o-mini",
+				temperature: 0.1, // menos criativo o possivel
+				messages: [
+					{ role: "system", content: SYSTEM_PROMPT },
+					{
+						role: "user",
+						content: `
                     ==============\n
                     TEXTO DO LAUDO\n
                     ==============\n
                     ${laudoText}
                     `,
-				},
-			],
-			response_format: zodResponseFormat(laudoSchema, "laudo_extraido"),
-		});
-		const text = response.choices[0].message.content;
-		if (!text) throw new Error("Erro na OpenAI");
+					},
+				],
+				response_format: zodResponseFormat(laudoSchema, "laudo_extraido"),
+			});
+			const text = response.choices[0].message.content;
+			if (!text) throw new Error("Erro na OpenAI");
 
-		const result = laudoSchema.parse(JSON.parse(text));
-		return result;
-	},
-	{
-		body: z.object({
-			laudoText: z.string(),
-		}),
-	},
-);
+			const result = laudoSchema.parse(JSON.parse(text));
+			return result;
+		},
+		{
+			auth: true,
+			body: z.object({
+				laudoText: z.string(),
+			}),
+		},
+	);

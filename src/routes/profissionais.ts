@@ -8,8 +8,10 @@ import {
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
+import { betterAuthPlugin } from "@/middleware/better-auth";
 
 export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
+	.use(betterAuthPlugin)
 	// get all
 	.get("/", async () => {
 		const result = await db
