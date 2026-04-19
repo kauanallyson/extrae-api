@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "."
-          target: "/opt/extrae-api"
+          target: "~/extrae-api"
 
       - name: Execute deployment commands via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -28,7 +28,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /opt/extrae-api
+            cd ~/extrae-api
             docker compose down
             docker compose up -d --build
             docker exec extrae_api bun db:push
