@@ -1,7 +1,6 @@
 import { Elysia } from "elysia";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { z } from "zod";
-import { betterAuthPlugin } from "@/middleware/better-auth";
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const doc = await pdfjsLib.getDocument({
@@ -53,24 +52,21 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   return lines.join("\n");
 }
 
-export const pdfRoutes = new Elysia({ prefix: "/extrair-texto-pdf" })
-  .use(betterAuthPlugin)
-  .post(
-    "/",
-    async ({ body: { pdf } }) => {
-      const arrayBuffer = await pdf.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const laudoText = await extractTextFromPDF(buffer);
-      return { laudoText };
-    },
-    {
-      auth: true,
-      body: z.object({
-        pdf: z
-          .instanceof(File)
-          .refine((file) => file.type === "application/pdf", {
-            message: "O arquivo deve ser um pdf",
-          }),
-      }),
-    },
-  );
+export const pdfRoutes = new Elysia({ prefix: "/extrair-texto-pdf" }).post(
+  "/",
+  async ({ body: { pdf } }) => {
+    const arrayBuffer = await pdf.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const laudoText = await extractTextFromPDF(buffer);
+    return { laudoText };
+  },
+  {
+    body: z.object({
+      pdf: z
+        .instanceof(File)
+        .refine((file) => file.type === "application/pdf", {
+          message: "O arquivo deve ser um pdf",
+        }),
+    }),
+  },
+);

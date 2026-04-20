@@ -1,10 +1,10 @@
-import Elysia from "elysia";
 import openapi from "@elysiajs/openapi";
-import { pdfRoutes } from "./routes/pdf";
-import { laudoRoutes } from "./routes/laudo";
-import { profissionaisRoutes } from "./routes/profissionais";
-import { excelRoutes } from "./routes/excel";
+import { Elysia } from "elysia";
 import { env } from "@/env";
+import { excelRoutes } from "./routes/excel";
+import { laudoRoutes } from "./routes/laudo";
+import { pdfRoutes } from "./routes/pdf";
+import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
   .use(openapi())

@@ -5,10 +5,8 @@ import { z } from "zod";
 import { db } from "@/db";
 import { dadosRae } from "@/db/schema/dadosRae";
 import { laudos } from "@/db/schema/laudo";
-import { betterAuthPlugin } from "@/middleware/better-auth";
 
 export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" })
-  .use(betterAuthPlugin)
   .get(
     "/:laudoId",
     async ({ params: { laudoId }, headers, status }) => {
@@ -67,7 +65,6 @@ export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" })
       return buffer;
     },
     {
-      auth: true,
       params: z.object({
         laudoId: z.number(),
       }),
