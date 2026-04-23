@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { laudos, laudosInsertSchema } from "@/db/schema/laudo";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { isValidCpf, isValidCnpj } from "@/lib/cpf-cnpj";
+import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
 
 const aiSchema = laudosInsertSchema.omit({
 	createdAt: true,
