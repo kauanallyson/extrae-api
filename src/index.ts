@@ -7,7 +7,7 @@ import { laudoRoutes } from "./routes/gerar-laudo-ia";
 import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
-  .use(cors({ origin: "https://extrae.vercel.app/*" }))
+  .use(cors({ origin: "https://extrae.vercel.app" }))
   .use(openapi())
   .get("/health", () => ({ status: "ok" }))
   .use(pdfRoutes)
