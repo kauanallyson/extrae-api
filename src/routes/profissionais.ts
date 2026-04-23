@@ -3,9 +3,9 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 import { db } from "@/db";
 import {
-  insertProfissionalSchema,
   profissionais,
-  updateProfissionalSchema,
+  profissionaisInsertSchema,
+  profissionaisUpdateSchema,
 } from "@/db/schema/profissionais";
 import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
 
@@ -57,7 +57,7 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
         return status(500, { message: "Ocorreu um erro.", error: `${e}` });
       }
     },
-    { body: insertProfissionalSchema },
+    { body: profissionaisInsertSchema },
   )
   // update profissional
   .put(
@@ -81,7 +81,7 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
       }
     },
     {
-      body: updateProfissionalSchema,
+      body: profissionaisUpdateSchema,
       params: z.object({
         id: z.coerce.number(),
       }),

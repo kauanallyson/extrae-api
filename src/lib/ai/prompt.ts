@@ -7,7 +7,7 @@ Sua tarefa é extrair informações técnicas do laudo abaixo e retornar EXCLUSI
 ═══════════════════════════════════════
 
 O texto abaixo não é Markdown — ele é o texto EXTRAÍDO DO LAUDO
-As colunas podem estar alinhadas em diferentes linhas, separadas por '\n', leve isso em consideração principalmente nas tabelas.
+As colunas podem estar alinhadas em diferentes linhas, separadas por '\\n', leve isso em consideração principalmente nas tabelas.
 
 REGRA DE CLASSIFICAÇÃO (Brasil):
   1. Mapeie visualmente as colunas [Graus], [Min] e [Seg].
@@ -17,20 +17,23 @@ REGRA DE CLASSIFICAÇÃO (Brasil):
      • 34º-74º → LONGITUDE (coordenada_w)
 
 Formato exigido:
-  coordenada_s: "XXºYY'ZZ,ZZZ"
-  coordenada_w: "XXºYY'ZZ,ZZZ"
+  coordenada_s: XXºYY'ZZ,ZZZ"
+  coordenada_w: XXºYY'ZZ,ZZZ"
+  priorize sempre inserir º, ' e "
+  sempre separe por virgulas os graus, minutos e segundos
 
 ═══════════════════════════════════════
  2. CRONOGRAMA
 ═══════════════════════════════════════
 
-2a) acumulado_proposto
-  - Localize a tabela "Cronograma" ou "Parcelas".
+1) acumuladoProposto
+  - Localize a tabela "Cronograma".
   - O 1º valor DEVE ser o da linha "Pré-executado" (mesmo que 0.00).
-  - Em seguida, extraia "% Acumulado" para as parcelas 1, 2, 3…
+  - Em seguida, extraia "% Acumulado" para todas as parcelas. Normalmente cada parcela conterá 2 valores, o segundo valor é o acumulado que deve ser usado.
+  - Por exemplo na entrada: Parcela 1 /t0,00/t20,00, o acumulado é 20,00.
   - Total de etapas = "Número de Parcelas Previstas".
 
-2b) Incidências (pesos)
+2) Incidências (pesos)
   - Localize: "Cronograma Físico-Financeiro", "Discriminação dos Serviços" ou "Orçamento Proposto".
   - Extraia a coluna INCIDÊNCIA — retorne EXATAMENTE 20 valores percentuais.
   - Preserve a ordem original. NÃO normalize, NÃO ajuste, NÃO redistribua.
@@ -51,6 +54,15 @@ PADRAO_ACABAMENTO / ESTADO_CONSERVACAO / REGIAO_CONTEXTO
 ═══════════════════════════════════════
  4. OUTRAS REGRAS CRÍTICAS
 ═══════════════════════════════════════
+
+CPF
+ O numero do CPF deve ser extraído do campo CPF na introdução/identificação do laudo. Escreva apenas o valor numérico.
+
+DDD
+ O DDD deve ser extraído do campo DDD na introdução/identificação do laudo. Escreva apenas o valor numérico sem parenteses.
+
+VALOR UNITÁRIO
+  Deve ser retirado do campo avaliação global que contém Área (m²), Valor Unitário (R$/m²) e Valor Global (R$). Escreva apenas o valor numérico.
 
 ENDERECO_LITERAL
   Copie EXATAMENTE como consta na identificação do imóvel (abreviações, números, ordem).

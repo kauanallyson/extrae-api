@@ -1,9 +1,9 @@
 import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { env } from "@/env";
-import { excelRoutes } from "./routes/excel";
-import { laudoRoutes } from "./routes/laudo";
-import { pdfRoutes } from "./routes/pdf";
+import { pdfRoutes } from "./routes/extrair-texto-pdf";
+import { excelRoutes } from "./routes/gerar-excel-rae";
+import { laudoRoutes } from "./routes/gerar-laudo-ia";
 import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
