@@ -1,19 +1,18 @@
 import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { env } from "@/env";
 import { pdfRoutes } from "./routes/extrair-texto-pdf";
 import { excelRoutes } from "./routes/gerar-excel-rae";
 import { laudoRoutes } from "./routes/gerar-laudo-ia";
 import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
-  .use(openapi())
-  .use(pdfRoutes)
-  .use(laudoRoutes)
-  .use(profissionaisRoutes)
-  .use(excelRoutes)
-  .listen(env.PORT);
+	.use(openapi())
+	.use(pdfRoutes)
+	.use(laudoRoutes)
+	.use(profissionaisRoutes)
+	.use(excelRoutes)
+	.listen(3000);
 
 console.log(
-  `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
+	`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
 );
