@@ -7,7 +7,12 @@ import {
 	profissionaisInsertSchema,
 	profissionaisUpdateSchema,
 } from "@/db/schema/profissionais";
-import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
+import {
+	formatCnpj,
+	formatCpf,
+	isValidCnpj,
+	isValidCpf,
+} from "@/lib/formatting";
 
 export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 	// get all
@@ -45,11 +50,15 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 		"/",
 		async ({ body, status }) => {
 			try {
-				if (body.cpf && !isValidCpf(body.cpf)) {
-					return status(400, { message: "CPF inválido" });
+				if (body.cpf) {
+					if (!isValidCpf(body.cpf))
+						return status(400, { message: "CPF inválido" });
+					body.cpf = formatCpf(body.cpf);
 				}
-				if (body.cnpj && !isValidCnpj(body.cnpj)) {
-					return status(400, { message: "CNPJ inválido" });
+				if (body.cnpj) {
+					if (!isValidCnpj(body.cnpj))
+						return status(400, { message: "CNPJ inválido" });
+					body.cnpj = formatCnpj(body.cnpj);
 				}
 				const result = await db.insert(profissionais).values(body).returning();
 				return status(201, result[0]);
@@ -64,11 +73,15 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 		"/:id",
 		async ({ params: { id }, body, status }) => {
 			try {
-				if (body.cpf && !isValidCpf(body.cpf)) {
-					return status(400, { message: "CPF inválido" });
+				if (body.cpf) {
+					if (!isValidCpf(body.cpf))
+						return status(400, { message: "CPF inválido" });
+					body.cpf = formatCpf(body.cpf);
 				}
-				if (body.cnpj && !isValidCnpj(body.cnpj)) {
-					return status(400, { message: "CNPJ inválido" });
+				if (body.cnpj) {
+					if (!isValidCnpj(body.cnpj))
+						return status(400, { message: "CNPJ inválido" });
+					body.cnpj = formatCnpj(body.cnpj);
 				}
 				const result = await db
 					.update(profissionais)

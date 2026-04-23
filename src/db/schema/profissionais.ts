@@ -1,4 +1,4 @@
-import { char, integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
 import {
 	createInsertSchema,
 	createSelectSchema,
@@ -9,8 +9,8 @@ export const profissionais = pgTable("profissionais", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	nome: text().notNull(),
 	nomeFantasia: text().notNull(),
-	cpf: char({ length: 11 }).unique().notNull(),
-	cnpj: char({ length: 14 }).unique().notNull(),
+	cpf: varchar({ length: 14 }).unique().notNull(),
+	cnpj: varchar({ length: 18 }).unique().notNull(),
 	registroCrea: varchar({ length: 25 }).notNull(),
 });
 

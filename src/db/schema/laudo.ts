@@ -22,8 +22,8 @@ export const laudos = pgTable("laudos", {
 		.references(() => profissionais.id)
 		.notNull(),
 	proponente: text(),
-	cpf: varchar({ length: 11 }),
-	cnpj: varchar({ length: 14 }),
+	cpf: varchar({ length: 14 }),
+	cnpj: varchar({ length: 18 }),
 	ddd: varchar({ length: 3 }),
 	telefone: varchar({ length: 20 }),
 	enderecoLiteral: text(),

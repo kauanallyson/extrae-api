@@ -1,29 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
-
-describe("Validação de CPF", () => {
-	test("deve retornar true para um CPF válido", () => {
-		// CPF válido com pontuação
-		expect(isValidCpf("123.456.789-09")).toBe(true);
-		// CPF válido sem pontuação
-		expect(isValidCpf("12345678909")).toBe(true);
-	});
-
-	test("deve retornar false para um CPF inválido", () => {
-		// CPF com dígitos verificadores incorretos
-		expect(isValidCpf("12345678901")).toBe(false);
-		// CPF com todos os dígitos iguais (inválido pela regra)
-		expect(isValidCpf("11111111111")).toBe(false);
-		// Muito curto
-		expect(isValidCpf("123")).toBe(false);
-		// Muito longo
-		expect(isValidCpf("123456789012")).toBe(false);
-	});
-
-	test("deve ignorar caracteres não numéricos", () => {
-		expect(isValidCpf("123!456@789#09")).toBe(true);
-	});
-});
+import { formatCnpj, isValidCnpj } from "./cnpj";
 
 describe("Validação de CNPJ", () => {
 	test("deve retornar true para um CNPJ válido", () => {
@@ -46,5 +22,16 @@ describe("Validação de CNPJ", () => {
 
 	test("deve ignorar caracteres não numéricos", () => {
 		expect(isValidCnpj("06.990x590/0001-23")).toBe(true);
+	});
+});
+
+describe("Formatação de CNPJ", () => {
+	test("deve formatar corretamente um CNPJ de 14 dígitos", () => {
+		expect(formatCnpj("06990590000123")).toBe("06.990.590/0001-23");
+	});
+
+	test("deve manter a formatação se já estiver formatado e limpar caracteres extras", () => {
+		expect(formatCnpj("06.990.590/0001-23")).toBe("06.990.590/0001-23");
+		expect(formatCnpj("06.990x590/0001-23")).toBe("06.990.590/0001-23");
 	});
 });

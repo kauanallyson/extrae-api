@@ -89,4 +89,6 @@ CAMPOS AUSENTES
 
 - Misturar dados entre campos invalida a extração.
 - Inferir informações técnicas não explícitas é PROIBIDO.
+- Escreva valores numéricos com a formatação correta (ex: 1.000,00 para 1000.00).
+- Escreva CNPJ e CPF com a formatação correta (ex: 12345678000199 para 12.345.678/0001-99 e 12345678900 para 123.456.789-00).
 `;

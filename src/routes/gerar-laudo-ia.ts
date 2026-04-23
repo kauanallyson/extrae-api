@@ -5,7 +5,14 @@ import { db } from "@/db";
 import { laudos, laudosInsertSchema } from "@/db/schema/laudo";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { isValidCnpj, isValidCpf } from "@/lib/cpf-cnpj";
+import {
+	formatCep,
+	formatCnpj,
+	formatCpf,
+	isValidCep,
+	isValidCnpj,
+	isValidCpf,
+} from "@/lib/formatting";
 
 const aiSchema = laudosInsertSchema.omit({
 	createdAt: true,
@@ -37,17 +44,19 @@ export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" }).post(
 
 		const aiData = aiSchema.parse(JSON.parse(text));
 
-		// Limpa e valida CPF/CNPJ antes de salvar
-		const cleanCpf = aiData.cpf?.replace(/\D/g, "") ?? null;
-		const cleanCnpj = aiData.cnpj?.replace(/\D/g, "") ?? null;
-
 		const [laudo] = await db
 			.insert(laudos)
 			.values({
 				...aiData,
 				profissionalId,
-				cpf: cleanCpf && isValidCpf(cleanCpf) ? cleanCpf : null,
-				cnpj: cleanCnpj && isValidCnpj(cleanCnpj) ? cleanCnpj : null,
+				cpf:
+					aiData.cpf && isValidCpf(aiData.cpf) ? formatCpf(aiData.cpf) : null,
+				cnpj:
+					aiData.cnpj && isValidCnpj(aiData.cnpj)
+						? formatCnpj(aiData.cnpj)
+						: null,
+				cep:
+					aiData.cep && isValidCep(aiData.cep) ? formatCep(aiData.cep) : null,
 			})
 			.returning();
 
