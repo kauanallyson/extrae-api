@@ -7,6 +7,7 @@ import { profissionaisRoutes } from "./routes/profissionais";
 
 const app = new Elysia()
 	.use(openapi())
+	.get("/health", () => ({ status: "ok" }))
 	.use(pdfRoutes)
 	.use(laudoRoutes)
 	.use(profissionaisRoutes)
