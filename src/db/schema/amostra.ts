@@ -72,11 +72,35 @@ export const amostrasSelectSchema = createSelectSchema(amostras);
 
 export const amostrasInsertSchema = createInsertSchema(amostras, {
 	dataReferencia: t.String(),
+	cpf: t.Optional(
+		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
+	),
+	cnpj: t.Optional(
+		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
+	),
+	cep: t.Optional(
+		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
+	),
+	ddd: t.Optional(
+		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
+	),
 	createdAt: t.Optional(t.Never()),
 	updatedAt: t.Optional(t.Never()),
 });
 
 export const amostrasUpdateSchema = createUpdateSchema(amostras, {
+	cpf: t.Optional(
+		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
+	),
+	cnpj: t.Optional(
+		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
+	),
+	cep: t.Optional(
+		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
+	),
+	ddd: t.Optional(
+		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
+	),
 	createdAt: t.Optional(t.Never()),
 	updatedAt: t.Optional(t.Never()),
 });

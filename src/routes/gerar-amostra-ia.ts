@@ -4,32 +4,25 @@ import { db } from "@/db";
 import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import {
-	formatCep,
-	formatCnpj,
-	formatCpf,
-	isValidCep,
-	isValidCnpj,
-	isValidCpf,
-} from "@/lib/formatting";
+import { normalizeDocumentFields } from "@/lib/formatting";
 
 const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId"]);
 
 export const amostraRoutes = new Elysia({ prefix: "/gerar-amostra-ia" }).post(
 	"/",
-	async ({ body: { avaliadorId, amostraText } }) => {
+	async ({ body: { avaliadorId, amostraText }, status }) => {
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
-			temperature: 0.1, // menos criativo o possivel
+			temperature: 0, // menos criativo o possível
 			messages: [
 				{ role: "system", content: SYSTEM_PROMPT },
 				{
 					role: "user",
 					content: `
-						==============\n
-						TEXTO DO AMOSTRA\n
-						==============\n
-            			${amostraText}`,
+						==============
+						TEXTO DA AMOSTRA
+						==============
+						${amostraText}`,
 				},
 			],
 			response_format: {
@@ -42,25 +35,27 @@ export const amostraRoutes = new Elysia({ prefix: "/gerar-amostra-ia" }).post(
 		});
 
 		const text = response.choices[0].message.content;
-		if (!text) throw new Error("Erro na OpenAI");
+		if (!text) return status(500, { message: "Erro na OpenAI" });
 
 		const parsed = JSON.parse(text);
 		const aiData = Value.Decode(aiSchema, parsed) as Static<typeof aiSchema>;
+		const { data, invalidFields } = normalizeDocumentFields(aiData);
+
+		if (invalidFields.length > 0) {
+			return status(400, {
+				message: "Dados de documento inválidos",
+				invalidFields,
+			});
+		}
 
 		const [amostra] = await db
 			.insert(amostras)
 			.values({
-				...aiData,
+				...data,
 				avaliadorId,
-				cpf:
-					aiData.cpf && isValidCpf(aiData.cpf) ? formatCpf(aiData.cpf) : null,
-				cnpj:
-					aiData.cnpj && isValidCnpj(aiData.cnpj)
-						? formatCnpj(aiData.cnpj)
-						: null,
-				cep:
-					aiData.cep && isValidCep(aiData.cep) ? formatCep(aiData.cep) : null,
-			})
+				textoExtraido: amostraText,
+			} as typeof amostras.$inferInsert)
+
 			.returning();
 
 		return { amostraId: amostra.id };

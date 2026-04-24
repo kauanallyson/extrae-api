@@ -39,7 +39,9 @@ export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" }).get(
 			.where(eq(amostras.id, amostraId));
 
 		if (!amostra) {
-			return status(400, { message: "Amostra not found" });
+			return status(404, {
+				message: `Amostra com id: ${amostraId} não encontrada`,
+			});
 		}
 
 		// Busca o avaliador vinculado ao amostra

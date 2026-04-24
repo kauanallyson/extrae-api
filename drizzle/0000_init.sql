@@ -1,4 +1,4 @@
-CREATE TABLE "amostras" (
+CREATE TABLE IF NOT EXISTS "amostras" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "amostras_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"texto_extraido" text,
 	"avaliador_id" integer NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE "amostras" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "avaliadores" (
+CREATE TABLE IF NOT EXISTS "avaliadores" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "avaliadores_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"nome" text NOT NULL,
 	"nome_fantasia" text NOT NULL,
@@ -57,4 +57,9 @@ CREATE TABLE "avaliadores" (
 	CONSTRAINT "avaliadores_cnpj_unique" UNIQUE("cnpj")
 );
 --> statement-breakpoint
-ALTER TABLE "amostras" ADD CONSTRAINT "amostras_avaliador_id_avaliadores_id_fk" FOREIGN KEY ("avaliador_id") REFERENCES "public"."avaliadores"("id") ON DELETE no action ON UPDATE no action;
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'amostras_avaliador_id_avaliadores_id_fk') THEN
+    ALTER TABLE "amostras" ADD CONSTRAINT "amostras_avaliador_id_avaliadores_id_fk" FOREIGN KEY ("avaliador_id") REFERENCES "public"."avaliadores"("id") ON DELETE no action ON UPDATE no action;
+  END IF;
+END $$;
