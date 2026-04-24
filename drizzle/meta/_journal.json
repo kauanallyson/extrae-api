@@ -5,15 +5,8 @@
 		{
 			"idx": 0,
 			"version": "7",
-			"when": 1776709398888,
-			"tag": "0000_curved_shen",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1776971533218,
-			"tag": "0001_update_cpf_cnpj_lengths",
+			"when": 1777041016494,
+			"tag": "0000_init",
 			"breakpoints": true
 		}
 	]

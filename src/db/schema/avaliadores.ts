@@ -3,9 +3,9 @@ import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "drizzle-zod";
+} from "drizzle-typebox";
 
-export const profissionais = pgTable("profissionais", {
+export const avaliadores = pgTable("avaliadores", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	nome: text().notNull(),
 	nomeFantasia: text().notNull(),
@@ -14,6 +14,6 @@ export const profissionais = pgTable("profissionais", {
 	registroCrea: varchar({ length: 25 }).notNull(),
 });
 
-export const profissionaisSelectSchema = createSelectSchema(profissionais);
-export const profissionaisInsertSchema = createInsertSchema(profissionais);
-export const profissionaisUpdateSchema = createUpdateSchema(profissionais);
+export const avaliadoresSelectSchema = createSelectSchema(avaliadores);
+export const avaliadoresInsertSchema = createInsertSchema(avaliadores);
+export const avaliadoresUpdateSchema = createUpdateSchema(avaliadores);

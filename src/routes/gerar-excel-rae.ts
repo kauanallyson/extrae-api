@@ -1,15 +1,14 @@
 import { eq } from "drizzle-orm";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import ExcelJS from "exceljs";
-import { z } from "zod";
 import { db } from "@/db";
-import { laudos } from "@/db/schema/laudo";
-import { profissionais } from "@/db/schema/profissionais";
+import { amostras } from "@/db/schema/amostra";
+import { avaliadores } from "@/db/schema/avaliadores";
 
 const EXCLUDED_FIELDS = new Set([
 	"id",
 	"textoExtraido",
-	"profissionalId",
+	"avaliadorId",
 	"createdAt",
 	"updatedAt",
 ]);
@@ -32,22 +31,22 @@ function writeEntries(
 }
 
 export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" }).get(
-	"/:laudoId",
-	async ({ params: { laudoId }, headers, status }) => {
-		const [laudo] = await db
+	"/:amostraId",
+	async ({ params: { amostraId }, headers, status }) => {
+		const [amostra] = await db
 			.select()
-			.from(laudos)
-			.where(eq(laudos.id, laudoId));
+			.from(amostras)
+			.where(eq(amostras.id, amostraId));
 
-		if (!laudo) {
-			return status(400, { message: "Laudo not found" });
+		if (!amostra) {
+			return status(400, { message: "Amostra not found" });
 		}
 
-		// Busca o profissional vinculado ao laudo
-		const [profissional] = await db
+		// Busca o avaliador vinculado ao amostra
+		const [avaliador] = await db
 			.select()
-			.from(profissionais)
-			.where(eq(profissionais.id, laudo.profissionalId));
+			.from(avaliadores)
+			.where(eq(avaliadores.id, amostra.avaliadorId));
 
 		const workbook = new ExcelJS.Workbook();
 		const sheet = workbook.addWorksheet("Dados RAE");
@@ -59,28 +58,28 @@ export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" }).get(
 
 		sheet.getRow(1).font = { bold: true, size: 12 };
 
-		// Escreve os dados do profissional primeiro (sem o id)
-		if (profissional) {
-			writeEntries(sheet, Object.entries(profissional), new Set(["id"]));
+		// Escreve os dados do avaliador primeiro (sem o id)
+		if (avaliador) {
+			writeEntries(sheet, Object.entries(avaliador), new Set(["id"]));
 		}
 
-		// Escreve os dados do laudo (sem id, profissionalId, createdAt, updatedAt)
-		writeEntries(sheet, Object.entries(laudo), EXCLUDED_FIELDS);
+		// Escreve os dados do amostra (sem id, avaliadorId, createdAt, updatedAt)
+		writeEntries(sheet, Object.entries(amostra), EXCLUDED_FIELDS);
 
 		const buffer = await workbook.xlsx.writeBuffer();
 
 		headers["Content-Type"] =
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-		const firstName = laudo.proponente?.trim().split(" ")[0] ?? "cliente";
+		const firstName = amostra.proponente?.trim().split(" ")[0] ?? "cliente";
 		headers["Content-Disposition"] =
 			`attachment; filename="dados-rae-${firstName}.xlsx"`;
 
 		return buffer;
 	},
 	{
-		params: z.object({
-			laudoId: z.coerce.number(),
+		params: t.Object({
+			amostraId: t.Numeric(),
 		}),
 	},
 );

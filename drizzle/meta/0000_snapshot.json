@@ -1,11 +1,11 @@
 {
-	"id": "cd6001d3-c13e-433c-b2df-fb1aecfbf81f",
+	"id": "aa026914-12ff-40f1-bf48-ad6104ffc932",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
-		"public.dados_amostra": {
-			"name": "dados_amostra",
+		"public.amostras": {
+			"name": "amostras",
 			"schema": "",
 			"columns": {
 				"id": {
@@ -15,7 +15,7 @@
 					"notNull": true,
 					"identity": {
 						"type": "always",
-						"name": "dados_amostra_id_seq",
+						"name": "amostras_id_seq",
 						"schema": "public",
 						"increment": "1",
 						"startWith": "1",
@@ -24,6 +24,156 @@
 						"cache": "1",
 						"cycle": false
 					}
+				},
+				"texto_extraido": {
+					"name": "texto_extraido",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"avaliador_id": {
+					"name": "avaliador_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"proponente": {
+					"name": "proponente",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cpf": {
+					"name": "cpf",
+					"type": "varchar(14)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cnpj": {
+					"name": "cnpj",
+					"type": "varchar(18)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"ddd": {
+					"name": "ddd",
+					"type": "varchar(3)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"telefone": {
+					"name": "telefone",
+					"type": "varchar(20)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"endereco_literal": {
+					"name": "endereco_literal",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"coordenada_s": {
+					"name": "coordenada_s",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"coordenada_w": {
+					"name": "coordenada_w",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"complemento": {
+					"name": "complemento",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"bairro": {
+					"name": "bairro",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cep": {
+					"name": "cep",
+					"type": "varchar(15)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"municipio": {
+					"name": "municipio",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"uf": {
+					"name": "uf",
+					"type": "char(2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"empresa_responsavel": {
+					"name": "empresa_responsavel",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"valor_terreno": {
+					"name": "valor_terreno",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"matricula": {
+					"name": "matricula",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"oficio": {
+					"name": "oficio",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"comarca": {
+					"name": "comarca",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"uf_matricula": {
+					"name": "uf_matricula",
+					"type": "char(2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"valor_imovel": {
+					"name": "valor_imovel",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"incidencias": {
+					"name": "incidencias",
+					"type": "real[]",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"numero_etapas": {
+					"name": "numero_etapas",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"acumulado_proposto": {
+					"name": "acumulado_proposto",
+					"type": "real[]",
+					"primaryKey": false,
+					"notNull": false
 				},
 				"valor_unitario": {
 					"name": "valor_unitario",
@@ -39,7 +189,7 @@
 				},
 				"idade_estimada": {
 					"name": "idade_estimada",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
@@ -81,265 +231,49 @@
 				},
 				"padrao_acabamento": {
 					"name": "padrao_acabamento",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"estado_conservacao": {
 					"name": "estado_conservacao",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"infraestrutura": {
 					"name": "infraestrutura",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"servicos_publicos": {
 					"name": "servicos_publicos",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"usos_predominantes": {
 					"name": "usos_predominantes",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"via_acesso": {
 					"name": "via_acesso",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"regiao_contexto": {
 					"name": "regiao_contexto",
-					"type": "varchar(255)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": false
 				},
 				"data_referencia": {
 					"name": "data_referencia",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				}
-			},
-			"indexes": {},
-			"foreignKeys": {},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
-			"policies": {},
-			"checkConstraints": {},
-			"isRLSEnabled": false
-		},
-		"public.dados_rae": {
-			"name": "dados_rae",
-			"schema": "",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "integer",
-					"primaryKey": true,
-					"notNull": true,
-					"identity": {
-						"type": "always",
-						"name": "dados_rae_id_seq",
-						"schema": "public",
-						"increment": "1",
-						"startWith": "1",
-						"minValue": "1",
-						"maxValue": "2147483647",
-						"cache": "1",
-						"cycle": false
-					}
-				},
-				"proponente": {
-					"name": "proponente",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"cpf_cnpj": {
-					"name": "cpf_cnpj",
-					"type": "varchar(20)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"ddd": {
-					"name": "ddd",
-					"type": "varchar(3)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"telefone": {
-					"name": "telefone",
-					"type": "varchar(20)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"endereco_literal": {
-					"name": "endereco_literal",
 					"type": "text",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"coordenada_s": {
-					"name": "coordenada_s",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"coordenada_w": {
-					"name": "coordenada_w",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"complemento": {
-					"name": "complemento",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"bairro": {
-					"name": "bairro",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"cep": {
-					"name": "cep",
-					"type": "varchar(15)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"municipio": {
-					"name": "municipio",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"uf": {
-					"name": "uf",
-					"type": "varchar(2)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"empresa_responsavel": {
-					"name": "empresa_responsavel",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"valor_terreno": {
-					"name": "valor_terreno",
-					"type": "real",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"matricula": {
-					"name": "matricula",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"oficio": {
-					"name": "oficio",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"comarca": {
-					"name": "comarca",
-					"type": "varchar(255)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"uf_matricula": {
-					"name": "uf_matricula",
-					"type": "varchar(2)",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"incidencias": {
-					"name": "incidencias",
-					"type": "real[]",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"valor_imovel": {
-					"name": "valor_imovel",
-					"type": "real",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"numero_etapas": {
-					"name": "numero_etapas",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"acumulado_proposto": {
-					"name": "acumulado_proposto",
-					"type": "real[]",
-					"primaryKey": false,
-					"notNull": false
-				}
-			},
-			"indexes": {},
-			"foreignKeys": {},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
-			"policies": {},
-			"checkConstraints": {},
-			"isRLSEnabled": false
-		},
-		"public.laudos": {
-			"name": "laudos",
-			"schema": "",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "integer",
-					"primaryKey": true,
-					"notNull": true,
-					"identity": {
-						"type": "always",
-						"name": "laudos_id_seq",
-						"schema": "public",
-						"increment": "1",
-						"startWith": "1",
-						"minValue": "1",
-						"maxValue": "2147483647",
-						"cache": "1",
-						"cycle": false
-					}
-				},
-				"texto_extraido": {
-					"name": "texto_extraido",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"profissional_id": {
-					"name": "profissional_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true
-				},
-				"dados_amostra_id": {
-					"name": "dados_amostra_id",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false
-				},
-				"dados_rae_id": {
-					"name": "dados_rae_id",
-					"type": "integer",
 					"primaryKey": false,
 					"notNull": false
 				},
@@ -360,29 +294,11 @@
 			},
 			"indexes": {},
 			"foreignKeys": {
-				"laudos_profissional_id_profissionais_id_fk": {
-					"name": "laudos_profissional_id_profissionais_id_fk",
-					"tableFrom": "laudos",
-					"tableTo": "profissionais",
-					"columnsFrom": ["profissional_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"laudos_dados_amostra_id_dados_amostra_id_fk": {
-					"name": "laudos_dados_amostra_id_dados_amostra_id_fk",
-					"tableFrom": "laudos",
-					"tableTo": "dados_amostra",
-					"columnsFrom": ["dados_amostra_id"],
-					"columnsTo": ["id"],
-					"onDelete": "no action",
-					"onUpdate": "no action"
-				},
-				"laudos_dados_rae_id_dados_rae_id_fk": {
-					"name": "laudos_dados_rae_id_dados_rae_id_fk",
-					"tableFrom": "laudos",
-					"tableTo": "dados_rae",
-					"columnsFrom": ["dados_rae_id"],
+				"amostras_avaliador_id_avaliadores_id_fk": {
+					"name": "amostras_avaliador_id_avaliadores_id_fk",
+					"tableFrom": "amostras",
+					"tableTo": "avaliadores",
+					"columnsFrom": ["avaliador_id"],
 					"columnsTo": ["id"],
 					"onDelete": "no action",
 					"onUpdate": "no action"
@@ -394,8 +310,8 @@
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
-		"public.profissionais": {
-			"name": "profissionais",
+		"public.avaliadores": {
+			"name": "avaliadores",
 			"schema": "",
 			"columns": {
 				"id": {
@@ -405,7 +321,7 @@
 					"notNull": true,
 					"identity": {
 						"type": "always",
-						"name": "profissionais_id_seq",
+						"name": "avaliadores_id_seq",
 						"schema": "public",
 						"increment": "1",
 						"startWith": "1",
@@ -417,25 +333,25 @@
 				},
 				"nome": {
 					"name": "nome",
-					"type": "varchar(512)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				},
 				"nome_fantasia": {
 					"name": "nome_fantasia",
-					"type": "varchar(512)",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				},
 				"cpf": {
 					"name": "cpf",
-					"type": "char(11)",
+					"type": "varchar(14)",
 					"primaryKey": false,
 					"notNull": true
 				},
 				"cnpj": {
 					"name": "cnpj",
-					"type": "char(14)",
+					"type": "varchar(18)",
 					"primaryKey": false,
 					"notNull": true
 				},
@@ -450,13 +366,13 @@
 			"foreignKeys": {},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {
-				"profissionais_cpf_unique": {
-					"name": "profissionais_cpf_unique",
+				"avaliadores_cpf_unique": {
+					"name": "avaliadores_cpf_unique",
 					"nullsNotDistinct": false,
 					"columns": ["cpf"]
 				},
-				"profissionais_cnpj_unique": {
-					"name": "profissionais_cnpj_unique",
+				"avaliadores_cnpj_unique": {
+					"name": "avaliadores_cnpj_unique",
 					"nullsNotDistinct": false,
 					"columns": ["cnpj"]
 				}

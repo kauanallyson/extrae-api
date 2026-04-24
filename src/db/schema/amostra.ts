@@ -11,15 +11,15 @@ import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "drizzle-zod";
-import z from "zod";
-import { profissionais } from "./profissionais";
+} from "drizzle-typebox";
+import { t } from "elysia";
+import { avaliadores } from "./avaliadores";
 
-export const laudos = pgTable("laudos", {
+export const amostras = pgTable("amostras", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	textoExtraido: text(),
-	profissionalId: integer()
-		.references(() => profissionais.id)
+	avaliadorId: integer()
+		.references(() => avaliadores.id)
 		.notNull(),
 	proponente: text(),
 	cpf: varchar({ length: 14 }),
@@ -68,12 +68,15 @@ export const laudos = pgTable("laudos", {
 		.notNull(),
 });
 
-export const laudosSelectSchema = createSelectSchema(laudos);
-export const laudosInsertSchema = createInsertSchema(laudos, {
-	createdAt: z.string(),
-	updatedAt: z.string(),
-	dataReferencia: z.string(),
-}).omit({
-	profissionalId: true,
+export const amostrasSelectSchema = createSelectSchema(amostras);
+
+export const amostrasInsertSchema = createInsertSchema(amostras, {
+	dataReferencia: t.String(),
+	createdAt: t.Optional(t.Never()),
+	updatedAt: t.Optional(t.Never()),
 });
-export const laudosUpdateSchema = createUpdateSchema(laudos);
+
+export const amostrasUpdateSchema = createUpdateSchema(amostras, {
+	createdAt: t.Optional(t.Never()),
+	updatedAt: t.Optional(t.Never()),
+});

@@ -1,26 +1,27 @@
-import { eq } from "drizzle-orm";
-import { Elysia } from "elysia";
-import { z } from "zod";
+import { desc, eq } from "drizzle-orm";
+import { Elysia, t } from "elysia";
 import { db } from "@/db";
 import {
-	profissionais,
-	profissionaisInsertSchema,
-	profissionaisUpdateSchema,
-} from "@/db/schema/profissionais";
+	amostras,
+	amostrasInsertSchema,
+	amostrasUpdateSchema,
+} from "@/db/schema/amostra";
 import {
+	formatCep,
 	formatCnpj,
 	formatCpf,
+	isValidCep,
 	isValidCnpj,
 	isValidCpf,
 } from "@/lib/formatting";
 
-export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
+export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 	// get all
 	.get("/", async () => {
 		const result = await db
 			.select()
-			.from(profissionais)
-			.orderBy(profissionais.nome);
+			.from(amostras)
+			.orderBy(desc(amostras.createdAt));
 		return result;
 	})
 	// find by id
@@ -29,23 +30,23 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 		async ({ params: { id }, status }) => {
 			const result = await db
 				.select()
-				.from(profissionais)
-				.where(eq(profissionais.id, id))
+				.from(amostras)
+				.where(eq(amostras.id, id))
 				.limit(1);
 			if (result.length === 0) {
 				return status(404, {
-					message: `Profissional com id: ${id} não encontrado`,
+					message: `Amostra com id: ${id} não encontrado`,
 				});
 			}
 			return result[0];
 		},
 		{
-			params: z.object({
-				id: z.coerce.number(),
+			params: t.Object({
+				id: t.Numeric(),
 			}),
 		},
 	)
-	// create profissional
+	// create amostra
 	.post(
 		"/",
 		async ({ body, status }) => {
@@ -60,15 +61,20 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 						return status(400, { message: "CNPJ inválido" });
 					body.cnpj = formatCnpj(body.cnpj);
 				}
-				const result = await db.insert(profissionais).values(body).returning();
+				if (body.cep) {
+					if (!isValidCep(body.cep))
+						return status(400, { message: "CEP inválido" });
+					body.cep = formatCep(body.cep);
+				}
+				const result = await db.insert(amostras).values(body).returning();
 				return status(201, result[0]);
 			} catch (e) {
 				return status(500, { message: "Ocorreu um erro.", error: `${e}` });
 			}
 		},
-		{ body: profissionaisInsertSchema },
+		{ body: amostrasInsertSchema },
 	)
-	// update profissional
+	// update amostra
 	.put(
 		"/:id",
 		async ({ params: { id }, body, status }) => {
@@ -83,10 +89,15 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 						return status(400, { message: "CNPJ inválido" });
 					body.cnpj = formatCnpj(body.cnpj);
 				}
+				if (body.cep) {
+					if (!isValidCep(body.cep))
+						return status(400, { message: "CEP inválido" });
+					body.cep = formatCep(body.cep);
+				}
 				const result = await db
-					.update(profissionais)
+					.update(amostras)
 					.set(body)
-					.where(eq(profissionais.id, id))
+					.where(eq(amostras.id, id))
 					.returning();
 				return status(200, result[0]);
 			} catch (e) {
@@ -94,30 +105,30 @@ export const profissionaisRoutes = new Elysia({ prefix: "/profissionais" })
 			}
 		},
 		{
-			body: profissionaisUpdateSchema,
-			params: z.object({
-				id: z.coerce.number(),
+			body: amostrasUpdateSchema,
+			params: t.Object({
+				id: t.Numeric(),
 			}),
 		},
 	)
-	// delete profissional
+	// delete amostra
 	.delete(
 		"/:id",
 		async ({ params: { id }, status }) => {
 			const result = await db
-				.delete(profissionais)
-				.where(eq(profissionais.id, id))
+				.delete(amostras)
+				.where(eq(amostras.id, id))
 				.returning();
 			if (result.length === 0) {
 				return status(404, {
-					message: `Profissional com id: ${id} não encontrado`,
+					message: `Amostra com id: ${id} não encontrado`,
 				});
 			}
 			return status(200, result[0]);
 		},
 		{
-			params: z.object({
-				id: z.coerce.number(),
+			params: t.Object({
+				id: t.Numeric(),
 			}),
 		},
 	);

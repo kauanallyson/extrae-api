@@ -1,6 +1,5 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { z } from "zod";
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 	const doc = await pdfjsLib.getDocument({
@@ -57,16 +56,15 @@ export const pdfRoutes = new Elysia({ prefix: "/extrair-texto-pdf" }).post(
 	async ({ body: { pdf } }) => {
 		const arrayBuffer = await pdf.arrayBuffer();
 		const buffer = Buffer.from(arrayBuffer);
-		const laudoText = await extractTextFromPDF(buffer);
-		return { laudoText };
+		const amostraText = await extractTextFromPDF(buffer);
+		return { amostraText };
 	},
 	{
-		body: z.object({
-			pdf: z
-				.instanceof(File)
-				.refine((file) => file.type === "application/pdf", {
-					message: "O arquivo deve ser um pdf",
-				}),
+		body: t.Object({
+			pdf: t.File({
+				type: "application/pdf",
+				error: "O arquivo deve ser um pdf",
+			}),
 		}),
 	},
 );

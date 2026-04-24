@@ -1,8 +1,12 @@
-import { z } from "zod";
+import { Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
-const envSchema = z.object({
-	DATABASE_URL: z.url().startsWith("postgresql://"),
-	OPENAI_API_KEY: z.string().nonempty(),
+const envSchema = Type.Object({
+	DATABASE_URL: Type.String({ pattern: "^postgresql://" }),
+	OPENAI_API_KEY: Type.String({ minLength: 1 }),
 });
 
-export const env = envSchema.parse(Bun.env);
+export const env = Value.Decode(envSchema, Bun.env) as typeof Bun.env & {
+	DATABASE_URL: string;
+	OPENAI_API_KEY: string;
+};

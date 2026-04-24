@@ -1,8 +1,7 @@
-import { Elysia } from "elysia";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
+import { Value } from "@sinclair/typebox/value";
+import { Elysia, type Static, t } from "elysia";
 import { db } from "@/db";
-import { laudos, laudosInsertSchema } from "@/db/schema/laudo";
+import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import {
@@ -14,14 +13,11 @@ import {
 	isValidCpf,
 } from "@/lib/formatting";
 
-const aiSchema = laudosInsertSchema.omit({
-	createdAt: true,
-	updatedAt: true,
-});
+const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId"]);
 
-export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" }).post(
+export const amostraRoutes = new Elysia({ prefix: "/gerar-amostra-ia" }).post(
 	"/",
-	async ({ body: { profissionalId, laudoText } }) => {
+	async ({ body: { avaliadorId, amostraText } }) => {
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
 			temperature: 0.1, // menos criativo o possivel
@@ -31,24 +27,31 @@ export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" }).post(
 					role: "user",
 					content: `
 						==============\n
-						TEXTO DO LAUDO\n
+						TEXTO DO AMOSTRA\n
 						==============\n
-            			${laudoText}`,
+            			${amostraText}`,
 				},
 			],
-			response_format: zodResponseFormat(aiSchema, "laudo_extraido"),
+			response_format: {
+				type: "json_schema",
+				json_schema: {
+					name: "amostra_extraido",
+					schema: aiSchema as Record<string, unknown>,
+				},
+			},
 		});
 
 		const text = response.choices[0].message.content;
 		if (!text) throw new Error("Erro na OpenAI");
 
-		const aiData = aiSchema.parse(JSON.parse(text));
+		const parsed = JSON.parse(text);
+		const aiData = Value.Decode(aiSchema, parsed) as Static<typeof aiSchema>;
 
-		const [laudo] = await db
-			.insert(laudos)
+		const [amostra] = await db
+			.insert(amostras)
 			.values({
 				...aiData,
-				profissionalId,
+				avaliadorId,
 				cpf:
 					aiData.cpf && isValidCpf(aiData.cpf) ? formatCpf(aiData.cpf) : null,
 				cnpj:
@@ -60,12 +63,12 @@ export const laudoRoutes = new Elysia({ prefix: "/gerar-laudo-ia" }).post(
 			})
 			.returning();
 
-		return { laudoId: laudo.id };
+		return { amostraId: amostra.id };
 	},
 	{
-		body: z.object({
-			profissionalId: z.number(),
-			laudoText: z.string(),
+		body: t.Object({
+			avaliadorId: t.Numeric(),
+			amostraText: t.String(),
 		}),
 	},
 );
