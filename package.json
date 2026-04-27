@@ -15,8 +15,8 @@
 		"db:studio": "bun --bun drizzle-kit studio"
 	},
 	"dependencies": {
-		"@elysiajs/cors": "^1.4.1",
-		"@elysiajs/openapi": "^1.4.14",
+		"@elysiajs/cors": "^1.4.2",
+		"@elysiajs/openapi": "^1.4.15",
 		"@sinclair/typebox": "^0.34.49",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
