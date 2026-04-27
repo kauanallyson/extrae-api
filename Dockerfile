@@ -1,4 +1,4 @@
-FROM oven/bun:alpine
+FROM oven/bun:latest
 
 WORKDIR /app
 
@@ -14,6 +14,6 @@ COPY ./drizzle ./drizzle
 
 ENV NODE_ENV=production
 
-CMD ["bun", "run", "src/index.ts"]
+CMD ["sh", "-c", "bun db:migrate && bun run src/index.ts"]
 
 EXPOSE 3000

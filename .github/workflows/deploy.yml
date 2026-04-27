@@ -33,4 +33,3 @@ jobs:
             cd ~/extrae-api
             docker compose down
             docker compose up -d --build
-            docker exec extrae_api bun db:migrate
