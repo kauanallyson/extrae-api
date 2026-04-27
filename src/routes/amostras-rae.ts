@@ -31,16 +31,16 @@ function writeEntries(
 }
 
 export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
-	"/:amostraId/rae",
-	async ({ params: { amostraId }, headers, status }) => {
+	"/:id/rae",
+	async ({ params: { id }, headers, status }) => {
 		const [amostra] = await db
 			.select()
 			.from(amostras)
-			.where(eq(amostras.id, amostraId));
+			.where(eq(amostras.id, id));
 
 		if (!amostra) {
 			return status(404, {
-				message: `Amostra com id: ${amostraId} não encontrada`,
+				message: `Amostra com id: ${id} não encontrada`,
 			});
 		}
 
@@ -81,7 +81,7 @@ export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
 	},
 	{
 		params: t.Object({
-			amostraId: t.Numeric(),
+			id: t.Numeric(),
 		}),
 	},
 );
