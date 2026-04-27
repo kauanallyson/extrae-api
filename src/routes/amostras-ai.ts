@@ -6,7 +6,17 @@ import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import { normalizeDocumentFields } from "@/lib/formatting";
 
-const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId", "textoExtraido"]);
+const aiSchema = t.Omit(amostrasInsertSchema, [
+	"avaliadorId",
+	"textoExtraido",
+	"createdAt",
+	"updatedAt",
+]);
+const aiResponseSchema = {
+	...aiSchema,
+	required: Object.keys(aiSchema.properties ?? {}),
+	additionalProperties: false,
+} as Record<string, unknown>;
 
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
@@ -29,7 +39,8 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 				type: "json_schema",
 				json_schema: {
 					name: "amostra_extraido",
-					schema: aiSchema as Record<string, unknown>,
+					schema: aiResponseSchema,
+					strict: true,
 				},
 			},
 		});
