@@ -32,7 +32,7 @@ function writeEntries(
 
 export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
 	"/:id/rae",
-	async ({ params: { id }, headers, status }) => {
+	async ({ params: { id }, set, status }) => {
 		const [amostra] = await db
 			.select()
 			.from(amostras)
@@ -70,11 +70,11 @@ export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
 
 		const buffer = await workbook.xlsx.writeBuffer();
 
-		headers["Content-Type"] =
+		set.headers["Content-Type"] =
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 		const firstName = amostra.proponente?.trim().split(" ")[0] ?? "cliente";
-		headers["Content-Disposition"] =
+		set.headers["Content-Disposition"] =
 			`attachment; filename="dados-rae-${firstName}.xlsx"`;
 
 		return buffer;

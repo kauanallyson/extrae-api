@@ -1,9 +1,17 @@
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { Elysia, t } from "elysia";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_PDF_PAGES = 50;
 const ROW_TOLERANCE_PX = 2;
+const require = createRequire(import.meta.url);
+const pdfjsPackageDir = dirname(require.resolve("pdfjs-dist/package.json"));
+const standardFontDataUrl = `${
+	pathToFileURL(join(pdfjsPackageDir, "standard_fonts")).href
+}/`;
 
 class PdfLimitError extends Error {
 	constructor(
@@ -19,6 +27,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 		data: new Uint8Array(buffer),
 		useWorkerFetch: false,
 		isEvalSupported: false,
+		standardFontDataUrl,
 	}).promise;
 
 	if (doc.numPages > MAX_PDF_PAGES) {
