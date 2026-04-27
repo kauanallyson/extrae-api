@@ -30,8 +30,8 @@ function writeEntries(
 	}
 }
 
-export const excelRoutes = new Elysia({ prefix: "/gerar-excel-rae" }).get(
-	"/:amostraId",
+export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
+	"/:amostraId/rae",
 	async ({ params: { amostraId }, headers, status }) => {
 		const [amostra] = await db
 			.select()

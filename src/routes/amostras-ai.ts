@@ -8,7 +8,7 @@ import { normalizeDocumentFields } from "@/lib/formatting";
 
 const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId"]);
 
-export const amostraRoutes = new Elysia({ prefix: "/gerar-amostra-ia" }).post(
+export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
 	async ({ body: { avaliadorId, amostraText }, status }) => {
 		const response = await openai.chat.completions.create({

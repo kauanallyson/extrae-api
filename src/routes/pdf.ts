@@ -51,7 +51,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 	return lines.join("\n");
 }
 
-export const pdfRoutes = new Elysia({ prefix: "/extrair-texto-pdf" }).post(
+export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
 	"/",
 	async ({ body: { pdf } }) => {
 		const arrayBuffer = await pdf.arrayBuffer();
