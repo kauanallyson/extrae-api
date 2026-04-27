@@ -1,3 +1,4 @@
+import { Value } from "@sinclair/typebox/value";
 import { desc, eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/db";
@@ -54,7 +55,7 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 
 				const result = await db
 					.insert(amostras)
-					.values(data as typeof amostras.$inferInsert)
+					.values(Value.Decode(amostrasInsertSchema, data))
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
@@ -78,7 +79,7 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 
 				const result = await db
 					.update(amostras)
-					.set(data as typeof amostras.$inferInsert)
+					.set(Value.Decode(amostrasUpdateSchema, data))
 
 					.where(eq(amostras.id, id))
 					.returning();

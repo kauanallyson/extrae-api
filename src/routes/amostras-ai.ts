@@ -6,7 +6,7 @@ import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import { normalizeDocumentFields } from "@/lib/formatting";
 
-const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId"]);
+const aiSchema = t.Omit(amostrasInsertSchema, ["avaliadorId", "textoExtraido"]);
 
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
@@ -50,12 +50,13 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 
 		const [amostra] = await db
 			.insert(amostras)
-			.values({
-				...data,
-				avaliadorId,
-				textoExtraido: amostraText,
-			} as typeof amostras.$inferInsert)
-
+			.values(
+				Value.Decode(amostrasInsertSchema, {
+					...data,
+					avaliadorId,
+					textoExtraido: amostraText,
+				}),
+			)
 			.returning();
 
 		return { amostraId: amostra.id };

@@ -1,3 +1,4 @@
+import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/db";
@@ -54,7 +55,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 
 				const result = await db
 					.insert(avaliadores)
-					.values(data as typeof avaliadores.$inferInsert)
+					.values(Value.Decode(avaliadoresInsertSchema, data))
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
@@ -78,7 +79,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 
 				const result = await db
 					.update(avaliadores)
-					.set(data as typeof avaliadores.$inferInsert)
+					.set(Value.Decode(avaliadoresUpdateSchema, data))
 					.where(eq(avaliadores.id, id))
 					.returning();
 
