@@ -8,6 +8,7 @@ import {
 	avaliadoresUpdateSchema,
 } from "@/db/schema/avaliadores";
 import { normalizeDocumentFields } from "@/lib/formatting";
+import { mapDatabaseError } from "@/lib/http";
 
 export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 	.get("/", async () => {
@@ -59,7 +60,13 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
-				return status(500, { message: "Ocorreu um erro.", error: `${e}` });
+				const response = mapDatabaseError(e, {
+					conflict: "Ja existe um avaliador com estes dados.",
+					foreignKey: "Nao foi possivel relacionar este avaliador.",
+					invalid: "Os dados do avaliador sao invalidos.",
+					default: "Ocorreu um erro ao salvar o avaliador.",
+				});
+				return status(response.status, response.body);
 			}
 		},
 		{ body: avaliadoresInsertSchema },
@@ -91,7 +98,13 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 
 				return status(200, result[0]);
 			} catch (e) {
-				return status(500, { message: "Ocorreu um erro.", error: `${e}` });
+				const response = mapDatabaseError(e, {
+					conflict: "Ja existe um avaliador com estes dados.",
+					foreignKey: "Nao foi possivel relacionar este avaliador.",
+					invalid: "Os dados do avaliador sao invalidos.",
+					default: "Ocorreu um erro ao atualizar o avaliador.",
+				});
+				return status(response.status, response.body);
 			}
 		},
 		{

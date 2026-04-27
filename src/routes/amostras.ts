@@ -8,6 +8,7 @@ import {
 	amostrasUpdateSchema,
 } from "@/db/schema/amostra";
 import { normalizeDocumentFields } from "@/lib/formatting";
+import { mapDatabaseError } from "@/lib/http";
 
 export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 	.get("/", async () => {
@@ -59,7 +60,13 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
-				return status(500, { message: "Ocorreu um erro.", error: `${e}` });
+				const response = mapDatabaseError(e, {
+					conflict: "Ja existe uma amostra com estes dados.",
+					foreignKey: "O avaliador informado nao existe.",
+					invalid: "Os dados da amostra sao invalidos.",
+					default: "Ocorreu um erro ao salvar a amostra.",
+				});
+				return status(response.status, response.body);
 			}
 		},
 		{ body: amostrasInsertSchema },
@@ -92,7 +99,13 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 
 				return status(200, result[0]);
 			} catch (e) {
-				return status(500, { message: "Ocorreu um erro.", error: `${e}` });
+				const response = mapDatabaseError(e, {
+					conflict: "Ja existe uma amostra com estes dados.",
+					foreignKey: "O avaliador informado nao existe.",
+					invalid: "Os dados da amostra sao invalidos.",
+					default: "Ocorreu um erro ao atualizar a amostra.",
+				});
+				return status(response.status, response.body);
 			}
 		},
 		{
