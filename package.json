@@ -8,11 +8,11 @@
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
 		"format": "biome format --write",
-		"db:generate": "bun drizzle-kit generate",
-		"db:migrate": "bun drizzle-kit migrate",
-		"db:push": "bun drizzle-kit push",
-		"db:pull": "bun drizzle-kit pull",
-		"db:studio": "bun drizzle-kit studio"
+		"db:generate": "bunx drizzle-kit generate",
+		"db:migrate": "bunx --env-file=.env drizzle-kit migrate",
+		"db:push": "bunx --env-file=.env drizzle-kit push",
+		"db:pull": "bunx --env-file=.env drizzle-kit pull",
+		"db:studio": "bunx --env-file=.env drizzle-kit studio"
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.4.2",

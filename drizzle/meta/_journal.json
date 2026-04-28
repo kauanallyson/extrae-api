@@ -15,6 +15,13 @@
 			"when": 1777280000000,
 			"tag": "0001_numeric_precision",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1777397236777,
+			"tag": "0002_perfect_clea",
+			"breakpoints": true
 		}
 	]
 }
