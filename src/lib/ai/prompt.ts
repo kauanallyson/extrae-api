@@ -26,6 +26,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **idadeEstimada:** texto literal completo (ex: "5 anos", "Novo", "Na Planta").
 - **dataReferencia:** data da AVALIAÇÃO DO IMÓVEL, formato DD/MM/AAAA. Ignorar datas de ART, vistoria, assinatura ou emissão.
 - **empresaResponsavel:** nome literal do "Representante legal" em SIGNATÁRIOS.
+- **numeroEtapas:** deve ser extraído de "Número de Parcelas Previstas" próximo ao cronograma.
 
 ## 5. FORMATAÇÃO
 - Respeite EXATAMENTE os nomes de campo do schema JSON fornecido.
