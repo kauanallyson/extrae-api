@@ -1,5 +1,5 @@
 import { Value } from "@sinclair/typebox/value";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { db } from "@/db";
 import {
@@ -10,10 +10,13 @@ import {
 import { normalizeDocumentFields } from "@/lib/formatting";
 import { mapDatabaseError } from "@/lib/http";
 
+const { textoExtraido: _textoExtraido, ...publicAmostraColumns } =
+	getTableColumns(amostras);
+
 export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 	.get("/", async () => {
 		const result = await db
-			.select()
+			.select(publicAmostraColumns)
 			.from(amostras)
 			.orderBy(desc(amostras.createdAt));
 		return result;
@@ -22,7 +25,7 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 		"/:id",
 		async ({ params: { id }, status }) => {
 			const result = await db
-				.select()
+				.select(publicAmostraColumns)
 				.from(amostras)
 				.where(eq(amostras.id, id))
 				.limit(1);
