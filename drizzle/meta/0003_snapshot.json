@@ -1,0 +1,462 @@
+{
+	"id": "35259a93-ef09-4f54-85fb-73da6f80de74",
+	"prevId": "02a23ecb-27b6-423f-bd77-6513e1c7ae38",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.amostras_texto_extraido": {
+			"name": "amostras_texto_extraido",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "always",
+						"name": "amostras_texto_extraido_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"amostra_id": {
+					"name": "amostra_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"texto_extraido": {
+					"name": "texto_extraido",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"amostras_texto_extraido_amostra_id_amostras_id_fk": {
+					"name": "amostras_texto_extraido_amostra_id_amostras_id_fk",
+					"tableFrom": "amostras_texto_extraido",
+					"tableTo": "amostras",
+					"columnsFrom": ["amostra_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"amostras_texto_extraido_amostraId_unique": {
+					"name": "amostras_texto_extraido_amostraId_unique",
+					"nullsNotDistinct": false,
+					"columns": ["amostra_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.amostras": {
+			"name": "amostras",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "always",
+						"name": "amostras_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"avaliador_id": {
+					"name": "avaliador_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"proponente": {
+					"name": "proponente",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cpf": {
+					"name": "cpf",
+					"type": "varchar(14)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cnpj": {
+					"name": "cnpj",
+					"type": "varchar(18)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"ddd": {
+					"name": "ddd",
+					"type": "varchar(3)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"telefone": {
+					"name": "telefone",
+					"type": "varchar(20)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"endereco_literal": {
+					"name": "endereco_literal",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"coordenada_s": {
+					"name": "coordenada_s",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"coordenada_w": {
+					"name": "coordenada_w",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"complemento": {
+					"name": "complemento",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"bairro": {
+					"name": "bairro",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"cep": {
+					"name": "cep",
+					"type": "varchar(15)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"municipio": {
+					"name": "municipio",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"uf": {
+					"name": "uf",
+					"type": "char(2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"empresa_responsavel": {
+					"name": "empresa_responsavel",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"valor_terreno": {
+					"name": "valor_terreno",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"matricula": {
+					"name": "matricula",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"oficio": {
+					"name": "oficio",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"comarca": {
+					"name": "comarca",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"uf_matricula": {
+					"name": "uf_matricula",
+					"type": "char(2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"valor_imovel": {
+					"name": "valor_imovel",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"incidencias": {
+					"name": "incidencias",
+					"type": "numeric(10, 4)[]",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"numero_etapas": {
+					"name": "numero_etapas",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"acumulado_proposto": {
+					"name": "acumulado_proposto",
+					"type": "numeric(10, 4)[]",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"valor_unitario": {
+					"name": "valor_unitario",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"testada": {
+					"name": "testada",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"idade_estimada": {
+					"name": "idade_estimada",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"area_terreno": {
+					"name": "area_terreno",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"area_construida": {
+					"name": "area_construida",
+					"type": "numeric(14, 2)",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"quartos": {
+					"name": "quartos",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"banheiros": {
+					"name": "banheiros",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"suites": {
+					"name": "suites",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"vagas": {
+					"name": "vagas",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"padrao_acabamento": {
+					"name": "padrao_acabamento",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"estado_conservacao": {
+					"name": "estado_conservacao",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"infraestrutura": {
+					"name": "infraestrutura",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"servicos_publicos": {
+					"name": "servicos_publicos",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"usos_predominantes": {
+					"name": "usos_predominantes",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"via_acesso": {
+					"name": "via_acesso",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"regiao_contexto": {
+					"name": "regiao_contexto",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"data_referencia": {
+					"name": "data_referencia",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"amostras_avaliador_id_avaliadores_id_fk": {
+					"name": "amostras_avaliador_id_avaliadores_id_fk",
+					"tableFrom": "amostras",
+					"tableTo": "avaliadores",
+					"columnsFrom": ["avaliador_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.avaliadores": {
+			"name": "avaliadores",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"identity": {
+						"type": "always",
+						"name": "avaliadores_id_seq",
+						"schema": "public",
+						"increment": "1",
+						"startWith": "1",
+						"minValue": "1",
+						"maxValue": "2147483647",
+						"cache": "1",
+						"cycle": false
+					}
+				},
+				"nome": {
+					"name": "nome",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"nome_fantasia": {
+					"name": "nome_fantasia",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"cpf": {
+					"name": "cpf",
+					"type": "varchar(14)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"cnpj": {
+					"name": "cnpj",
+					"type": "varchar(18)",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"registro_crea": {
+					"name": "registro_crea",
+					"type": "varchar(25)",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"avaliadores_cpf_unique": {
+					"name": "avaliadores_cpf_unique",
+					"nullsNotDistinct": false,
+					"columns": ["cpf"]
+				},
+				"avaliadores_cnpj_unique": {
+					"name": "avaliadores_cnpj_unique",
+					"nullsNotDistinct": false,
+					"columns": ["cnpj"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

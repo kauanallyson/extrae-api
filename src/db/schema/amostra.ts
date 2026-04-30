@@ -17,7 +17,6 @@ import { avaliadores } from "./avaliadores";
 
 export const amostras = pgTable("amostras", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	textoExtraido: text(),
 	avaliadorId: integer()
 		.references(() => avaliadores.id)
 		.notNull(),

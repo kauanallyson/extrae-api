@@ -7,7 +7,6 @@ import { avaliadores } from "@/db/schema/avaliadores";
 
 const EXCLUDED_FIELDS = new Set([
 	"id",
-	"textoExtraido",
 	"avaliadorId",
 	"createdAt",
 	"updatedAt",

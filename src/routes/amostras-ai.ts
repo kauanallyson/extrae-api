@@ -2,16 +2,17 @@ import { Value } from "@sinclair/typebox/value";
 import { Elysia, type Static, t } from "elysia";
 import { db } from "@/db";
 import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
+import { amostrasTextoExtraido } from "@/db/schema/amostra-texto-extraido";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import { normalizeDocumentFields } from "@/lib/formatting";
 
 const aiSchema = t.Omit(amostrasInsertSchema, [
 	"avaliadorId",
-	"textoExtraido",
 	"createdAt",
 	"updatedAt",
 ]);
+
 const aiResponseSchema = {
 	...aiSchema,
 	required: Object.keys(aiSchema.properties ?? {}),
@@ -59,16 +60,24 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 			});
 		}
 
-		const [amostra] = await db
-			.insert(amostras)
-			.values(
-				Value.Decode(amostrasInsertSchema, {
-					...data,
-					avaliadorId,
-					textoExtraido: amostraText,
-				}),
-			)
-			.returning();
+		const amostra = await db.transaction(async (tx) => {
+			const [createdAmostra] = await tx
+				.insert(amostras)
+				.values(
+					Value.Decode(amostrasInsertSchema, {
+						...data,
+						avaliadorId,
+					}),
+				)
+				.returning();
+
+			await tx.insert(amostrasTextoExtraido).values({
+				amostraId: createdAmostra.id,
+				textoExtraido: amostraText,
+			});
+
+			return createdAmostra;
+		});
 
 		return { amostraId: amostra.id };
 	},

@@ -1,7 +1,11 @@
 import { cors } from "@elysiajs/cors";
 import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { routes } from "./routes";
+import { amostrasRoutes } from "./routes/amostras";
+import { amostrasAiRoutes } from "./routes/amostras-ai";
+import { amostrasRaeRoutes } from "./routes/amostras-rae";
+import { avaliadoresRoutes } from "./routes/avaliadores";
+import { pdfRoutes } from "./routes/pdf";
 
 const app = new Elysia()
 	.use(
@@ -12,7 +16,11 @@ const app = new Elysia()
 	)
 	.use(openapi())
 	.get("/health", () => ({ status: "ok" }))
-	.use(routes)
+	.use(amostrasRoutes)
+	.use(amostrasAiRoutes)
+	.use(amostrasRaeRoutes)
+	.use(avaliadoresRoutes)
+	.use(pdfRoutes)
 	.listen({ hostname: "0.0.0.0", port: 3000 });
 
 console.log(
