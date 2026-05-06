@@ -9,8 +9,8 @@ Extraia os dados da amostra e retorne EXCLUSIVAMENTE um JSON válido conforme o 
 - Formato: XXºYY'ZZ,ZZZ" (usar º, ' e " obrigatoriamente; separar com vírgulas)
 
 ## 2. CRONOGRAMA
-**acumuladoProposto:** 1º valor = linha "Pré-executado" (mesmo que 0.00), depois "% Acumulado" de cada parcela (2º valor por parcela). Total = "Número de Parcelas Previstas".
-**Incidências:** Extraia coluna INCIDÊNCIA de "Cronograma Físico-Financeiro", "Discriminação dos Serviços" ou "Orçamento Proposto". Retorne EXATAMENTE 20 valores, na ordem original, sem normalizar. Complete com 0.0 se < 20 etapas.
+**acumuladoProposto:** Primeiro preencha "Pré-executado", depois pegue exatamente o campo "% Acumulado" de cada parcela. Sempre pegue o valor acumulado, ou seja, o segundo. a ultima parcela deve ser 100%. Total = "Número de Parcelas Previstas".
+**Incidências:** Extraia coluna Pesos de "Orçamento Proposto". Retorne EXATAMENTE 20 valores EM PORCENTAGEM, não o valor unitário, na ordem original, sem normalizar.
 
 ## 3. CAMPOS CLASSIFICÁVEIS
 Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário → "".
@@ -22,7 +22,8 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **DDD:** apenas dígitos numéricos do campo DDD da identificação.
 - **valorUnitario:** do campo "Avaliação Global" (Valor Unitário R$/m²), apenas valor numérico JSON.
 - **enderecoLiteral:** cópia exata da identificação do imóvel (abreviações, números e ordem preservados).
-- **matricula, oficio, comarca, ufMatricula:** extraia cada campo separadamente.
+- **matricula, comarca, ufMatricula:** extraia cada campo separadamente.
+- **oficio** extraia logo após o numero da matricula.
 - **idadeEstimada:** texto literal completo (ex: "5 anos", "Novo", "Na Planta").
 - **dataReferencia:** data da AVALIAÇÃO DO IMÓVEL, formato DD/MM/AAAA. Ignorar datas de ART, vistoria, assinatura ou emissão.
 - **empresaResponsavel:** nome literal do "Representante legal" em SIGNATÁRIOS.

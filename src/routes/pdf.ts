@@ -18,7 +18,6 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 	const doc = await pdfjsLib.getDocument({
 		data: new Uint8Array(buffer),
 		useWorkerFetch: false,
-		isEvalSupported: false,
 	}).promise;
 
 	if (doc.numPages > MAX_PDF_PAGES) {
