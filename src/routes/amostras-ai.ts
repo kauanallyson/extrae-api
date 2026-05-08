@@ -1,28 +1,30 @@
-import { Value } from "@sinclair/typebox/value";
-import { Elysia, type Static, t } from "elysia";
+import { Elysia } from "elysia";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { ZodError, z } from "zod";
 import { db } from "@/db";
 import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
 import { amostrasTextoExtraido } from "@/db/schema/amostra-texto-extraido";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { normalizeDocumentFields } from "@/lib/formatting";
+import { mapDatabaseError } from "@/lib/http";
 
-const aiSchema = t.Omit(amostrasInsertSchema, [
-	"avaliadorId",
-	"createdAt",
-	"updatedAt",
-]);
+const aiSchema = amostrasInsertSchema
+	.omit({
+		avaliadorId: true,
+		createdAt: true,
+		updatedAt: true,
+	})
+	.required();
 
-const aiResponseSchema = {
-	...aiSchema,
-	required: Object.keys(aiSchema.properties ?? {}),
-	additionalProperties: false,
-} as Record<string, unknown>;
+const amostraAiBodySchema = z.object({
+	avaliadorId: z.coerce.number().int(),
+	amostraText: z.string().min(20, "amostraText must be at least 20 characters"),
+});
 
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
 	async ({ body: { avaliadorId, amostraText }, status }) => {
-		const response = await openai.chat.completions.create({
+		const response = await openai.chat.completions.parse({
 			model: "gpt-4o-mini",
 			temperature: 0, // menos criativo o possível
 			messages: [
@@ -36,55 +38,56 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 						${amostraText}`,
 				},
 			],
-			response_format: {
-				type: "json_schema",
-				json_schema: {
-					name: "amostra_extraido",
-					schema: aiResponseSchema,
-					strict: true,
-				},
-			},
+			response_format: zodResponseFormat(aiSchema, "amostra_extraido"),
 		});
 
-		const text = response.choices[0].message.content;
-		if (!text) return status(500, { message: "Erro na OpenAI" });
+		const message = response.choices[0].message;
 
-		const parsed = JSON.parse(text);
-		const aiData = Value.Decode(aiSchema, parsed) as Static<typeof aiSchema>;
-		const { data, invalidFields } = normalizeDocumentFields(aiData);
-
-		if (invalidFields.length > 0) {
-			return status(400, {
-				message: "Dados de documento inválidos",
-				invalidFields,
-			});
+		if (message.refusal) {
+			return status(400, { message: message.refusal });
 		}
 
-		const amostra = await db.transaction(async (tx) => {
-			const [createdAmostra] = await tx
-				.insert(amostras)
-				.values(
-					Value.Decode(amostrasInsertSchema, {
-						...data,
-						avaliadorId,
-					}),
-				)
-				.returning();
+		if (!message.parsed) return status(500, { message: "Erro na OpenAI" });
 
-			await tx.insert(amostrasTextoExtraido).values({
-				amostraId: createdAmostra.id,
-				textoExtraido: amostraText,
+		try {
+			const amostra = await db.transaction(async (tx) => {
+				const [createdAmostra] = await tx
+					.insert(amostras)
+					.values(
+						amostrasInsertSchema.parse({
+							...message.parsed,
+							avaliadorId,
+						}),
+					)
+					.returning();
+
+				await tx.insert(amostrasTextoExtraido).values({
+					amostraId: createdAmostra.id,
+					textoExtraido: amostraText,
+				});
+
+				return createdAmostra;
 			});
 
-			return createdAmostra;
-		});
+			return { amostraId: amostra.id };
+		} catch (e) {
+			if (e instanceof ZodError) {
+				return status(422, {
+					message: "Os dados extraidos da amostra sao invalidos.",
+					issues: e.issues,
+				});
+			}
 
-		return { amostraId: amostra.id };
+			const response = mapDatabaseError(e, {
+				conflict: "Ja existe uma amostra com estes dados.",
+				foreignKey: "O avaliador informado nao existe.",
+				invalid: "Os dados da amostra sao invalidos.",
+				default: "Ocorreu um erro ao salvar a amostra.",
+			});
+			return status(response.status, response.body);
+		}
 	},
 	{
-		body: t.Object({
-			avaliadorId: t.Numeric(),
-			amostraText: t.String(),
-		}),
+		body: amostraAiBodySchema,
 	},
 );

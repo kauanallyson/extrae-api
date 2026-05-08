@@ -11,8 +11,15 @@ import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "drizzle-typebox";
-import { t } from "elysia";
+} from "drizzle-zod";
+import { z } from "zod";
+import {
+	cepSchema,
+	cnpjSchema,
+	cpfSchema,
+	dddSchema,
+	telefoneSchema,
+} from "@/lib/schemas";
 import { avaliadores } from "./avaliadores";
 
 export const amostras = pgTable("amostras", {
@@ -74,36 +81,22 @@ export const amostras = pgTable("amostras", {
 export const amostrasSelectSchema = createSelectSchema(amostras);
 
 export const amostrasInsertSchema = createInsertSchema(amostras, {
-	dataReferencia: t.String(),
-	cpf: t.Optional(
-		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	),
-	cnpj: t.Optional(
-		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
-	),
-	cep: t.Optional(
-		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
-	),
-	ddd: t.Optional(
-		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
-	),
-	createdAt: t.Optional(t.Never()),
-	updatedAt: t.Optional(t.Never()),
+	dataReferencia: z.string(),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
+	cep: cepSchema.optional(),
+	ddd: dddSchema.optional(),
+	telefone: telefoneSchema.optional(),
+	createdAt: z.never().optional(),
+	updatedAt: z.never().optional(),
 });
 
 export const amostrasUpdateSchema = createUpdateSchema(amostras, {
-	cpf: t.Optional(
-		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	),
-	cnpj: t.Optional(
-		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
-	),
-	cep: t.Optional(
-		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
-	),
-	ddd: t.Optional(
-		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
-	),
-	createdAt: t.Optional(t.Never()),
-	updatedAt: t.Optional(t.Never()),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
+	cep: cepSchema.optional(),
+	ddd: dddSchema.optional(),
+	telefone: telefoneSchema.optional(),
+	createdAt: z.never().optional(),
+	updatedAt: z.never().optional(),
 });

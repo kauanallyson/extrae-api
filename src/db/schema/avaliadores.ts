@@ -3,8 +3,8 @@ import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "drizzle-typebox";
-import { t } from "elysia";
+} from "drizzle-zod";
+import { cnpjSchema, cpfSchema } from "@/lib/schemas";
 
 export const avaliadores = pgTable("avaliadores", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -18,15 +18,11 @@ export const avaliadores = pgTable("avaliadores", {
 export const avaliadoresSelectSchema = createSelectSchema(avaliadores);
 
 export const avaliadoresInsertSchema = createInsertSchema(avaliadores, {
-	cpf: t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	cnpj: t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
+	cpf: cpfSchema,
+	cnpj: cnpjSchema,
 });
 
 export const avaliadoresUpdateSchema = createUpdateSchema(avaliadores, {
-	cpf: t.Optional(
-		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	),
-	cnpj: t.Optional(
-		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
-	),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
 });

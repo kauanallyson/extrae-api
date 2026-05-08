@@ -1,14 +1,13 @@
-import { Value } from "@sinclair/typebox/value";
 import { desc, eq } from "drizzle-orm";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import { db } from "@/db";
 import {
 	amostras,
 	amostrasInsertSchema,
 	amostrasUpdateSchema,
 } from "@/db/schema/amostra";
-import { normalizeDocumentFields } from "@/lib/formatting";
 import { mapDatabaseError } from "@/lib/http";
+import { idParamsSchema } from "@/lib/schemas";
 
 export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 	.get("/", async () => {
@@ -36,27 +35,16 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 			return result[0];
 		},
 		{
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	)
 	.post(
 		"/",
 		async ({ body, status }) => {
 			try {
-				const { data, invalidFields } = normalizeDocumentFields(body);
-
-				if (invalidFields.length > 0) {
-					return status(400, {
-						message: "Dados de documento inválidos",
-						invalidFields,
-					});
-				}
-
 				const result = await db
 					.insert(amostras)
-					.values(Value.Decode(amostrasInsertSchema, data))
+					.values(amostrasInsertSchema.parse(body))
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
@@ -75,18 +63,9 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 		"/:id",
 		async ({ params: { id }, body, status }) => {
 			try {
-				const { data, invalidFields } = normalizeDocumentFields(body);
-
-				if (invalidFields.length > 0) {
-					return status(400, {
-						message: "Dados de documento inválidos",
-						invalidFields,
-					});
-				}
-
 				const result = await db
 					.update(amostras)
-					.set(Value.Decode(amostrasUpdateSchema, data))
+					.set(amostrasUpdateSchema.parse(body))
 					.where(eq(amostras.id, id))
 					.returning();
 
@@ -109,9 +88,7 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 		},
 		{
 			body: amostrasUpdateSchema,
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	)
 	.delete(
@@ -131,8 +108,6 @@ export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 			return status(200, result[0]);
 		},
 		{
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	);
