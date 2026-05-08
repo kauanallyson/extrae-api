@@ -17,15 +17,15 @@
 	"dependencies": {
 		"@elysiajs/cors": "^1.4.2",
 		"@elysiajs/openapi": "^1.4.15",
-		"@sinclair/typebox": "^0.34.49",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
-		"drizzle-typebox": "^0.3.3",
-		"elysia": "1.4.28",
+		"drizzle-zod": "^0.8.3",
+		"elysia": "^1.4.28",
 		"exceljs": "^4.4.0",
-		"openai": "^6.35.0",
+		"openai": "^6.37.0",
 		"pdfjs-dist": "^5.7.284",
-		"pg": "^8.20.0"
+		"pg": "^8.20.0",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.12",

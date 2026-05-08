@@ -1,9 +1,14 @@
 import { eq } from "drizzle-orm";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import ExcelJS from "exceljs";
+import { z } from "zod";
 import { db } from "@/db";
 import { amostras } from "@/db/schema/amostra";
 import { avaliadores } from "@/db/schema/avaliadores";
+
+const idParamsSchema = z.object({
+	id: z.coerce.number().int(),
+});
 
 const EXCLUDED_FIELDS = new Set([
 	"id",
@@ -79,8 +84,6 @@ export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
 		return buffer;
 	},
 	{
-		params: t.Object({
-			id: t.Numeric(),
-		}),
+		params: idParamsSchema,
 	},
 );

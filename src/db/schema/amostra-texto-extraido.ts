@@ -1,5 +1,5 @@
 import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-typebox";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { amostras } from "./amostra";
 
 export const amostrasTextoExtraido = pgTable("amostras_texto_extraido", {

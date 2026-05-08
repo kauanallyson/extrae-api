@@ -11,8 +11,8 @@ import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "drizzle-typebox";
-import { t } from "elysia";
+} from "drizzle-zod";
+import { z } from "zod";
 import { avaliadores } from "./avaliadores";
 
 export const amostras = pgTable("amostras", {
@@ -74,36 +74,52 @@ export const amostras = pgTable("amostras", {
 export const amostrasSelectSchema = createSelectSchema(amostras);
 
 export const amostrasInsertSchema = createInsertSchema(amostras, {
-	dataReferencia: t.String(),
-	cpf: t.Optional(
-		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	),
-	cnpj: t.Optional(
-		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
-	),
-	cep: t.Optional(
-		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
-	),
-	ddd: t.Optional(
-		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
-	),
-	createdAt: t.Optional(t.Never()),
-	updatedAt: t.Optional(t.Never()),
+	dataReferencia: z.string(),
+	cpf: z
+		.string()
+		.regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
+		.optional(),
+	cnpj: z
+		.string()
+		.regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/)
+		.optional(),
+	cep: z
+		.string()
+		.regex(/^\d{5}-?\d{3}$/)
+		.optional(),
+	ddd: z
+		.string()
+		.regex(/^\d{2,3}$/)
+		.optional(),
+	telefone: z
+		.string()
+		.regex(/^\d{4,5}-\d{4}$/)
+		.optional(),
+	createdAt: z.never().optional(),
+	updatedAt: z.never().optional(),
 });
 
 export const amostrasUpdateSchema = createUpdateSchema(amostras, {
-	cpf: t.Optional(
-		t.String({ minLength: 11, maxLength: 14, pattern: "^[0-9.-]*$" }),
-	),
-	cnpj: t.Optional(
-		t.String({ minLength: 14, maxLength: 18, pattern: "^[0-9./-]*$" }),
-	),
-	cep: t.Optional(
-		t.String({ minLength: 8, maxLength: 10, pattern: "^[0-9-]*$" }),
-	),
-	ddd: t.Optional(
-		t.String({ minLength: 2, maxLength: 3, pattern: "^[0-9]*$" }),
-	),
-	createdAt: t.Optional(t.Never()),
-	updatedAt: t.Optional(t.Never()),
+	cpf: z
+		.string()
+		.regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
+		.optional(),
+	cnpj: z
+		.string()
+		.regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/)
+		.optional(),
+	cep: z
+		.string()
+		.regex(/^\d{5}-?\d{3}$/)
+		.optional(),
+	ddd: z
+		.string()
+		.regex(/^\d{2,3}$/)
+		.optional(),
+	telefone: z
+		.string()
+		.regex(/^\d{4,5}-\d{4}$/)
+		.optional(),
+	createdAt: z.never().optional(),
+	updatedAt: z.never().optional(),
 });

@@ -1,14 +1,17 @@
-import { Value } from "@sinclair/typebox/value";
 import { eq } from "drizzle-orm";
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
+import { z } from "zod";
 import { db } from "@/db";
 import {
 	avaliadores,
 	avaliadoresInsertSchema,
 	avaliadoresUpdateSchema,
 } from "@/db/schema/avaliadores";
-import { normalizeDocumentFields } from "@/lib/formatting";
 import { mapDatabaseError } from "@/lib/http";
+
+const idParamsSchema = z.object({
+	id: z.coerce.number().int(),
+});
 
 export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 	.get("/", async () => {
@@ -36,27 +39,16 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 			return result[0];
 		},
 		{
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	)
 	.post(
 		"/",
 		async ({ body, status }) => {
 			try {
-				const { data, invalidFields } = normalizeDocumentFields(body);
-
-				if (invalidFields.length > 0) {
-					return status(400, {
-						message: "Dados de documento inválidos",
-						invalidFields,
-					});
-				}
-
 				const result = await db
 					.insert(avaliadores)
-					.values(Value.Decode(avaliadoresInsertSchema, data))
+					.values(avaliadoresInsertSchema.parse(body))
 					.returning();
 				return status(201, result[0]);
 			} catch (e) {
@@ -75,18 +67,9 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 		"/:id",
 		async ({ params: { id }, body, status }) => {
 			try {
-				const { data, invalidFields } = normalizeDocumentFields(body);
-
-				if (invalidFields.length > 0) {
-					return status(400, {
-						message: "Dados de documento inválidos",
-						invalidFields,
-					});
-				}
-
 				const result = await db
 					.update(avaliadores)
-					.set(Value.Decode(avaliadoresUpdateSchema, data))
+					.set(avaliadoresUpdateSchema.parse(body))
 					.where(eq(avaliadores.id, id))
 					.returning();
 
@@ -109,9 +92,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 		},
 		{
 			body: avaliadoresUpdateSchema,
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	)
 	.delete(
@@ -131,8 +112,6 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 			return status(200, result[0]);
 		},
 		{
-			params: t.Object({
-				id: t.Numeric(),
-			}),
+			params: idParamsSchema,
 		},
 	);

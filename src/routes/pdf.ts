@@ -1,5 +1,6 @@
-import { Elysia, t } from "elysia";
+import { Elysia, fileType } from "elysia";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { z } from "zod";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_PDF_PAGES = 50;
@@ -87,11 +88,13 @@ export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
 		}
 	},
 	{
-		body: t.Object({
-			pdf: t.File({
-				type: "application/pdf",
-				error: "O arquivo deve ser um pdf",
-			}),
+		body: z.object({
+			pdf: z
+				.file()
+				.refine(
+					(file) => fileType(file, "application/pdf"),
+					"O arquivo deve ser um pdf",
+				),
 		}),
 	},
 );
