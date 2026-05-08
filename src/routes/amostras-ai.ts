@@ -1,28 +1,26 @@
-import { Value } from "@sinclair/typebox/value";
-import { Elysia, type Static, t } from "elysia";
-import { db } from "@/db";
-import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
-import { amostrasTextoExtraido } from "@/db/schema/amostra-texto-extraido";
+import { Elysia } from "elysia";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+import { amostrasInsertSchema } from "@/db/schema/amostra";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { normalizeDocumentFields } from "@/lib/formatting";
 
-const aiSchema = t.Omit(amostrasInsertSchema, [
-	"avaliadorId",
-	"createdAt",
-	"updatedAt",
-]);
+const aiSchema = amostrasInsertSchema
+	.omit({
+		avaliadorId: true,
+		createdAt: true,
+		updatedAt: true,
+	})
+	.required();
 
-const aiResponseSchema = {
-	...aiSchema,
-	required: Object.keys(aiSchema.properties ?? {}),
-	additionalProperties: false,
-} as Record<string, unknown>;
+const amostraAiBodySchema = z.object({
+	amostraText: z.string(),
+});
 
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
-	async ({ body: { avaliadorId, amostraText }, status }) => {
-		const response = await openai.chat.completions.create({
+	async ({ body: { amostraText }, status }) => {
+		const response = await openai.chat.completions.parse({
 			model: "gpt-4o-mini",
 			temperature: 0, // menos criativo o possível
 			messages: [
@@ -36,55 +34,20 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 						${amostraText}`,
 				},
 			],
-			response_format: {
-				type: "json_schema",
-				json_schema: {
-					name: "amostra_extraido",
-					schema: aiResponseSchema,
-					strict: true,
-				},
-			},
+			response_format: zodResponseFormat(aiSchema, "amostra_extraido"),
 		});
 
-		const text = response.choices[0].message.content;
-		if (!text) return status(500, { message: "Erro na OpenAI" });
+		const message = response.choices[0].message;
 
-		const parsed = JSON.parse(text);
-		const aiData = Value.Decode(aiSchema, parsed) as Static<typeof aiSchema>;
-		const { data, invalidFields } = normalizeDocumentFields(aiData);
-
-		if (invalidFields.length > 0) {
-			return status(400, {
-				message: "Dados de documento inválidos",
-				invalidFields,
-			});
+		if (message.refusal) {
+			return status(400, { message: message.refusal });
 		}
 
-		const amostra = await db.transaction(async (tx) => {
-			const [createdAmostra] = await tx
-				.insert(amostras)
-				.values(
-					Value.Decode(amostrasInsertSchema, {
-						...data,
-						avaliadorId,
-					}),
-				)
-				.returning();
+		if (!message.parsed) return status(500, { message: "Erro na OpenAI" });
 
-			await tx.insert(amostrasTextoExtraido).values({
-				amostraId: createdAmostra.id,
-				textoExtraido: amostraText,
-			});
-
-			return createdAmostra;
-		});
-
-		return { amostraId: amostra.id };
+		return message.parsed;
 	},
 	{
-		body: t.Object({
-			avaliadorId: t.Numeric(),
-			amostraText: t.String(),
-		}),
+		body: amostraAiBodySchema,
 	},
 );
