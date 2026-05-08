@@ -4,7 +4,7 @@ import {
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-zod";
-import { z } from "zod";
+import { cnpjSchema, cpfSchema } from "@/lib/schemas";
 
 export const avaliadores = pgTable("avaliadores", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -18,17 +18,11 @@ export const avaliadores = pgTable("avaliadores", {
 export const avaliadoresSelectSchema = createSelectSchema(avaliadores);
 
 export const avaliadoresInsertSchema = createInsertSchema(avaliadores, {
-	cpf: z.string().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/),
-	cnpj: z.string().regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/),
+	cpf: cpfSchema,
+	cnpj: cnpjSchema,
 });
 
 export const avaliadoresUpdateSchema = createUpdateSchema(avaliadores, {
-	cpf: z
-		.string()
-		.regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
-		.optional(),
-	cnpj: z
-		.string()
-		.regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/)
-		.optional(),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
 });

@@ -13,6 +13,13 @@ import {
 	createUpdateSchema,
 } from "drizzle-zod";
 import { z } from "zod";
+import {
+	cepSchema,
+	cnpjSchema,
+	cpfSchema,
+	dddSchema,
+	telefoneSchema,
+} from "@/lib/schemas";
 import { avaliadores } from "./avaliadores";
 
 export const amostras = pgTable("amostras", {
@@ -75,51 +82,21 @@ export const amostrasSelectSchema = createSelectSchema(amostras);
 
 export const amostrasInsertSchema = createInsertSchema(amostras, {
 	dataReferencia: z.string(),
-	cpf: z
-		.string()
-		.regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
-		.optional(),
-	cnpj: z
-		.string()
-		.regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/)
-		.optional(),
-	cep: z
-		.string()
-		.regex(/^\d{5}-?\d{3}$/)
-		.optional(),
-	ddd: z
-		.string()
-		.regex(/^\d{2,3}$/)
-		.optional(),
-	telefone: z
-		.string()
-		.regex(/^\d{4,5}-\d{4}$/)
-		.optional(),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
+	cep: cepSchema.optional(),
+	ddd: dddSchema.optional(),
+	telefone: telefoneSchema.optional(),
 	createdAt: z.never().optional(),
 	updatedAt: z.never().optional(),
 });
 
 export const amostrasUpdateSchema = createUpdateSchema(amostras, {
-	cpf: z
-		.string()
-		.regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
-		.optional(),
-	cnpj: z
-		.string()
-		.regex(/^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/)
-		.optional(),
-	cep: z
-		.string()
-		.regex(/^\d{5}-?\d{3}$/)
-		.optional(),
-	ddd: z
-		.string()
-		.regex(/^\d{2,3}$/)
-		.optional(),
-	telefone: z
-		.string()
-		.regex(/^\d{4,5}-\d{4}$/)
-		.optional(),
+	cpf: cpfSchema.optional(),
+	cnpj: cnpjSchema.optional(),
+	cep: cepSchema.optional(),
+	ddd: dddSchema.optional(),
+	telefone: telefoneSchema.optional(),
 	createdAt: z.never().optional(),
 	updatedAt: z.never().optional(),
 });

@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
+import { ZodError, z } from "zod";
 import { db } from "@/db";
 import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
 import { amostrasTextoExtraido } from "@/db/schema/amostra-texto-extraido";
@@ -18,7 +18,7 @@ const aiSchema = amostrasInsertSchema
 
 const amostraAiBodySchema = z.object({
 	avaliadorId: z.coerce.number().int(),
-	amostraText: z.string(),
+	amostraText: z.string().min(20, "amostraText must be at least 20 characters"),
 });
 
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
@@ -71,6 +71,13 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 
 			return { amostraId: amostra.id };
 		} catch (e) {
+			if (e instanceof ZodError) {
+				return status(422, {
+					message: "Os dados extraidos da amostra sao invalidos.",
+					issues: e.issues,
+				});
+			}
+
 			const response = mapDatabaseError(e, {
 				conflict: "Ja existe uma amostra com estes dados.",
 				foreignKey: "O avaliador informado nao existe.",

@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
-import { z } from "zod";
 import { db } from "@/db";
 import {
 	avaliadores,
@@ -8,10 +7,7 @@ import {
 	avaliadoresUpdateSchema,
 } from "@/db/schema/avaliadores";
 import { mapDatabaseError } from "@/lib/http";
-
-const idParamsSchema = z.object({
-	id: z.coerce.number().int(),
-});
+import { idParamsSchema } from "@/lib/schemas";
 
 export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 	.get("/", async () => {
@@ -46,10 +42,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 		"/",
 		async ({ body, status }) => {
 			try {
-				const result = await db
-					.insert(avaliadores)
-					.values(avaliadoresInsertSchema.parse(body))
-					.returning();
+				const result = await db.insert(avaliadores).values(body).returning();
 				return status(201, result[0]);
 			} catch (e) {
 				const response = mapDatabaseError(e, {
@@ -69,7 +62,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 			try {
 				const result = await db
 					.update(avaliadores)
-					.set(avaliadoresUpdateSchema.parse(body))
+					.set(body)
 					.where(eq(avaliadores.id, id))
 					.returning();
 

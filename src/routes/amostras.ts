@@ -1,6 +1,5 @@
 import { desc, eq } from "drizzle-orm";
 import { Elysia } from "elysia";
-import { z } from "zod";
 import { db } from "@/db";
 import {
 	amostras,
@@ -8,10 +7,7 @@ import {
 	amostrasUpdateSchema,
 } from "@/db/schema/amostra";
 import { mapDatabaseError } from "@/lib/http";
-
-const idParamsSchema = z.object({
-	id: z.coerce.number().int(),
-});
+import { idParamsSchema } from "@/lib/schemas";
 
 export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
 	.get("/", async () => {

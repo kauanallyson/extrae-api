@@ -1,14 +1,10 @@
 import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import ExcelJS from "exceljs";
-import { z } from "zod";
 import { db } from "@/db";
 import { amostras } from "@/db/schema/amostra";
 import { avaliadores } from "@/db/schema/avaliadores";
-
-const idParamsSchema = z.object({
-	id: z.coerce.number().int(),
-});
+import { idParamsSchema } from "@/lib/schemas";
 
 const EXCLUDED_FIELDS = new Set([
 	"id",
