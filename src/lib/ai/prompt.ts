@@ -18,7 +18,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - padraoAcabamento, estadoConservacao, regiaoContexto: nunca inferir.
 
 ## 4. CAMPOS ESPECÍFICOS
-- **CPF:** apenas dígitos numéricos do campo CPF da identificação.
+- **CPF:** digitos com máscara 123.456.789-00
 - **DDD:** apenas dígitos numéricos do campo DDD da identificação.
 - **valorUnitario:** do campo "Avaliação Global" (Valor Unitário R$/m²), apenas valor numérico JSON.
 - **enderecoLiteral:** cópia exata da identificação do imóvel (abreviações, números e ordem preservados).
@@ -34,7 +34,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - Não use UPPER_CASE, não use snake_case, não invente campos extras.
 - Campos numéricos e listas numéricas devem ser JSON numbers, nunca strings. Exemplo: 1000.5, 0, [12.5, 0, 3].
 - Use ponto como separador decimal em números JSON.
-- CPF → 12345678900 | CNPJ → 12.345.678/0001-99
+- CPF → 123.456.789-00 | CNPJ → 12.345.678/0001-99
 - Campo ausente: texto → "" | número → 0 | lista → []
 
 ## PROIBIDO
