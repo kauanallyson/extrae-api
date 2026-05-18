@@ -15,7 +15,7 @@ Extraia os dados da amostra e retorne EXCLUSIVAMENTE um JSON válido conforme o 
 ## 3. CAMPOS CLASSIFICÁVEIS
 Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário → "".
 - viaAcesso: LOCAL | COLETORA | ARTERIAL
-- padraoAcabamento, estadoConservacao, regiaoContexto: nunca inferir.
+- estadoConservacao, regiaoContexto: nunca inferir.
 
 ## 4. CAMPOS ESPECÍFICOS
 - **CPF:** digitos com máscara 123.456.789-00
@@ -28,6 +28,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **dataReferencia:** data da AVALIAÇÃO DO IMÓVEL, formato DD/MM/AAAA. Ignorar datas de ART, vistoria, assinatura ou emissão.
 - **empresaResponsavel:** nome literal do "Representante legal" em SIGNATÁRIOS.
 - **numeroEtapas:** deve ser extraído de "Número de Parcelas Previstas" próximo ao cronograma.
+- **padraoAcabamento:** deve ser sempre coletado. Tipos de valores possíveis são: 'Mínimo', 'Baixo', 'Normal (c/ aspectos de baixo)', 'Normal (forte predominância)', 'Normal (c/ aspectos de alto)', 'Alto (por predoninância)' ou 'Alto(superior, luxo)'.
 
 ## 5. FORMATAÇÃO
 - Respeite EXATAMENTE os nomes de campo do schema JSON fornecido.
