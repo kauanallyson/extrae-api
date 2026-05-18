@@ -39,7 +39,8 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 			if (!("str" in item) || !item.str.trim()) continue;
 
 			const y =
-				Math.round(item.transform[5] / ROW_TOLERANCE_PX) * ROW_TOLERANCE_PX;
+				Math.round(item.transform[5] / ROW_TOLERANCE_PX) *
+				ROW_TOLERANCE_PX;
 			const x = item.transform[4];
 
 			if (!rowMap.has(y)) rowMap.set(y, []);
