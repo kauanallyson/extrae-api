@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_PDF_PAGES = 50;
-const ROW_TOLERANCE_PX = 2;
+const ROW_TOLERANCE_PX = 5;
 
 class PdfLimitError extends Error {
 	constructor(
@@ -16,6 +16,10 @@ class PdfLimitError extends Error {
 }
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+	if (buffer.subarray(0, 4).toString() !== "%PDF") {
+		throw new PdfLimitError("Arquivo não é um PDF válido.", 400);
+	}
+
 	const doc = await pdfjsLib.getDocument({
 		data: new Uint8Array(buffer),
 		useWorkerFetch: false,
@@ -37,12 +41,10 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 
 		for (const item of content.items) {
 			if (!("str" in item) || !item.str.trim()) continue;
-
 			const y =
 				Math.round(item.transform[5] / ROW_TOLERANCE_PX) *
 				ROW_TOLERANCE_PX;
 			const x = item.transform[4];
-
 			if (!rowMap.has(y)) rowMap.set(y, []);
 			rowMap.get(y)?.push({ text: item.str, x });
 		}
@@ -53,11 +55,14 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 				cells
 					.sort((a, b) => a.x - b.x)
 					.map((cell) => cell.text)
-					.join("\t"),
-			);
+					.join(" | "),
+			)
+			.filter((line) => line.trim().length > 0);
 
-		lines.push(`--- Pagina ${pageNum} ---`);
-		lines.push(...sortedRows);
+		if (sortedRows.length > 0) {
+			lines.push(`--- Pagina ${pageNum} ---`);
+			lines.push(...sortedRows);
+		}
 	}
 
 	return lines.join("\n");
@@ -71,7 +76,6 @@ export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
 				message: `O arquivo excede o limite de ${Math.floor(MAX_PDF_BYTES / (1024 * 1024))}MB.`,
 			});
 		}
-
 		try {
 			const arrayBuffer = await pdf.arrayBuffer();
 			const buffer = Buffer.from(arrayBuffer);
@@ -81,7 +85,6 @@ export const pdfRoutes = new Elysia({ prefix: "/pdf" }).post(
 			if (error instanceof PdfLimitError) {
 				return status(error.statusCode, { message: error.message });
 			}
-
 			console.error("PDF extraction failed", error);
 			return status(400, {
 				message: "Nao foi possivel processar o PDF enviado.",
