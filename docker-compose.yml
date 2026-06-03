@@ -1,4 +1,15 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: extrae_postgres
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   api:
     build: .
     container_name: extrae_api
@@ -7,6 +18,10 @@ services:
       - "3000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      - postgres
 
   nginx:
     image: nginx:alpine
@@ -20,3 +35,5 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api
+volumes:
+  postgres_data:
