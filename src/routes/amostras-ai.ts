@@ -1,12 +1,9 @@
-import { Elysia } from "elysia";
+import { Elysia, fileType } from "elysia";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ZodError, z } from "zod";
-import { db } from "@/db";
-import { amostras, amostrasInsertSchema } from "@/db/schema/amostra";
-import { amostrasTextoExtraido } from "@/db/schema/amostra-texto-extraido";
+import { z } from "zod";
+import { amostrasInsertSchema } from "@/db/schema/amostras";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
-import { mapDatabaseError } from "@/lib/http";
 
 const aiSchema = amostrasInsertSchema
 	.omit({
@@ -16,26 +13,28 @@ const aiSchema = amostrasInsertSchema
 	})
 	.required();
 
-const amostraAiBodySchema = z.object({
-	avaliadorId: z.coerce.number().int(),
-	amostraText: z.string().min(20, "amostraText must be at least 20 characters"),
-});
-
 export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 	"/",
-	async ({ body: { avaliadorId, amostraText }, status }) => {
+	async ({ body: { pdf }, status }) => {
+		const buffer = Buffer.from(await pdf.arrayBuffer());
+		const base64 = buffer.toString("base64");
+
 		const response = await openai.chat.completions.parse({
 			model: "gpt-4o-mini",
-			temperature: 0, // menos criativo o possível
+			temperature: 0,
 			messages: [
 				{ role: "system", content: SYSTEM_PROMPT },
 				{
 					role: "user",
-					content: `
-						==============
-						TEXTO DA AMOSTRA
-						==============
-						${amostraText}`,
+					content: [
+						{
+							type: "file",
+							file: {
+								filename: pdf.name ?? "document.pdf",
+								file_data: `data:application/pdf;base64,${base64}`,
+							},
+						},
+					],
 				},
 			],
 			response_format: zodResponseFormat(aiSchema, "amostra_extraido"),
@@ -49,45 +48,16 @@ export const amostrasAiRoutes = new Elysia({ prefix: "/amostras/ia" }).post(
 
 		if (!message.parsed) return status(500, { message: "Erro na OpenAI" });
 
-		try {
-			const amostra = await db.transaction(async (tx) => {
-				const [createdAmostra] = await tx
-					.insert(amostras)
-					.values(
-						amostrasInsertSchema.parse({
-							...message.parsed,
-							avaliadorId,
-						}),
-					)
-					.returning();
-
-				await tx.insert(amostrasTextoExtraido).values({
-					amostraId: createdAmostra.id,
-					textoExtraido: amostraText,
-				});
-
-				return createdAmostra;
-			});
-
-			return { amostraId: amostra.id };
-		} catch (e) {
-			if (e instanceof ZodError) {
-				return status(422, {
-					message: "Os dados extraidos da amostra sao invalidos.",
-					issues: e.issues,
-				});
-			}
-
-			const response = mapDatabaseError(e, {
-				conflict: "Ja existe uma amostra com estes dados.",
-				foreignKey: "O avaliador informado nao existe.",
-				invalid: "Os dados da amostra sao invalidos.",
-				default: "Ocorreu um erro ao salvar a amostra.",
-			});
-			return status(response.status, response.body);
-		}
+		return message.parsed;
 	},
 	{
-		body: amostraAiBodySchema,
+		body: z.object({
+			pdf: z
+				.file()
+				.refine(
+					(file) => fileType(file, "application/pdf"),
+					"O arquivo deve ser um pdf",
+				),
+		}),
 	},
 );
