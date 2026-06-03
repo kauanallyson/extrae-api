@@ -5,7 +5,6 @@ import { amostrasRoutes } from "./routes/amostras";
 import { amostrasAiRoutes } from "./routes/amostras-ai";
 import { amostrasRaeRoutes } from "./routes/amostras-rae";
 import { avaliadoresRoutes } from "./routes/avaliadores";
-import { pdfRoutes } from "./routes/pdf";
 
 const app = new Elysia()
 	.use(
@@ -20,7 +19,6 @@ const app = new Elysia()
 	.use(amostrasAiRoutes)
 	.use(amostrasRaeRoutes)
 	.use(avaliadoresRoutes)
-	.use(pdfRoutes)
 	.listen({ hostname: "0.0.0.0", port: 3000 });
 
 console.log(

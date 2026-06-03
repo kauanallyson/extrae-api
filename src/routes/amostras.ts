@@ -5,7 +5,7 @@ import {
 	amostras,
 	amostrasInsertSchema,
 	amostrasUpdateSchema,
-} from "@/db/schema/amostra";
+} from "@/db/schema/amostras";
 import { mapDatabaseError } from "@/lib/http";
 import { idParamsSchema } from "@/lib/schemas";
 

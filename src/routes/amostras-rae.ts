@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
-import { amostras } from "@/db/schema/amostra";
+import { amostras } from "@/db/schema/amostras";
 import { avaliadores } from "@/db/schema/avaliadores";
 import { idParamsSchema } from "@/lib/schemas";
 
