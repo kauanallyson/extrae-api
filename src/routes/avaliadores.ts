@@ -14,7 +14,7 @@ export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
 		const result = await db
 			.select()
 			.from(avaliadores)
-			.orderBy(avaliadores.nome);
+			.orderBy(avaliadores.id);
 		return result;
 	})
 	.get(
