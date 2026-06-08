@@ -32,7 +32,7 @@ export const amostras = pgTable("amostras", {
 	cnpj: varchar({ length: 18 }),
 	ddd: varchar({ length: 3 }),
 	telefone: varchar({ length: 20 }),
-	enderecoLiteral: text(),
+	endereco: text(),
 	coordenadaS: text(),
 	coordenadaW: text(),
 	complemento: text(),

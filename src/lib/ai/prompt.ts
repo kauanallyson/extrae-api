@@ -6,7 +6,7 @@ Extraia os dados da amostra e retorne EXCLUSIVAMENTE um JSON válido conforme o 
 - O texto é um RETRATO ESPACIAL do PDF - colunas alinhadas por espaços reproduzem a tabela original.
 - Mapeie visualmente as colunas [Graus][Min][Seg] próximas às palavras "Latitude" e "Longitude Oeste".
 - Extraia 1º conjunto e 2º conjunto lidos horizontalmente na mesma linha.
-- Classifique pelo grau: 00°–33° -> coordenadaS | 34°–74° -> coordenadaW
+- Classifique pelo grau: 00°-33° -> coordenadaS | 34°-74° -> coordenadaW
 - Formato: XXºYY'ZZ,ZZZ" (usar º, ' e " obrigatoriamente; separador decimal vírgula)
 
 ## 2. CRONOGRAMA
@@ -23,7 +23,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **cpf:** digitos com máscara 123.456.789-00
 - **ddd:** apenas dígitos numéricos do campo DDD da identificação.
 - **valorUnitario:** do campo "Avaliação Global" (Valor Unitário R$/m²), apenas valor numérico JSON.
-- **enderecoLiteral:** cópia exata da identificação do imóvel (abreviações, números e ordem preservados).
+- **endereco:** cópia exata da identificação do imóvel (abreviações, números e ordem preservados).
 - **matricula, comarca, ufMatricula:** extraia cada campo separadamente.
 - **oficio:** é o numero do oficio do cartorio, exemplo: '1', '2', '3' extraia logo após o número da matrícula.
 - **idadeEstimada:** texto literal completo (ex: "5 anos", "Novo", "Na Planta").

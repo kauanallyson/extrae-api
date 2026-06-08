@@ -3,6 +3,7 @@ import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { amostrasRoutes } from "./routes/amostras";
 import { amostrasAiRoutes } from "./routes/amostras-ai";
+import { amostrasPlanilhaRoutes } from "./routes/amostras-planilha";
 import { amostrasRaeRoutes } from "./routes/amostras-rae";
 import { avaliadoresRoutes } from "./routes/avaliadores";
 
@@ -15,6 +16,7 @@ const app = new Elysia()
 	)
 	.use(openapi())
 	.get("/health", () => ({ status: "ok" }))
+	.use(amostrasPlanilhaRoutes)
 	.use(amostrasRoutes)
 	.use(amostrasAiRoutes)
 	.use(amostrasRaeRoutes)
