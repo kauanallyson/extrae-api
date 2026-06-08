@@ -24,6 +24,8 @@ function writeEntries(
 		if (Array.isArray(value)) {
 			const row = sheet.addRow([key, ...value.map((item) => item ?? "")]);
 			row.getCell(1).font = { bold: false };
+		} else if (typeof value === "number") {
+			sheet.addRow([key, value]);
 		} else {
 			sheet.addRow([key, value != null ? String(value) : ""]);
 		}
