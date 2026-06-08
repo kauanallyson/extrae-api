@@ -6,17 +6,33 @@ import {
 	amostrasInsertSchema,
 	amostrasUpdateSchema,
 } from "@/db/schema/amostras";
+import {
+	amostrasFilterSchema,
+	buildAmostrasFilters,
+} from "@/lib/amostras-filters";
 import { mapDatabaseError } from "@/lib/http";
 import { idParamsSchema } from "@/lib/schemas";
 
 export const amostrasRoutes = new Elysia({ prefix: "/amostras" })
-	.get("/", async () => {
-		const result = await db
-			.select()
-			.from(amostras)
-			.orderBy(desc(amostras.createdAt));
-		return result;
-	})
+	.get(
+		"/",
+		async ({ query, status }) => {
+			const filters = buildAmostrasFilters(query);
+			if (!filters.ok) {
+				return status(400, { message: filters.message });
+			}
+
+			const result = await db
+				.select()
+				.from(amostras)
+				.where(filters.where)
+				.orderBy(desc(amostras.createdAt));
+			return result;
+		},
+		{
+			query: amostrasFilterSchema,
+		},
+	)
 	.get(
 		"/:id",
 		async ({ params: { id }, status }) => {
