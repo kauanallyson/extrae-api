@@ -1,9 +1,13 @@
-import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { Elysia } from "elysia";
 import ExcelJS from "exceljs";
 import { z } from "zod";
 import { db } from "@/db";
 import { amostras, amostrasSelectSchema } from "@/db/schema/amostras";
+import {
+	amostrasFilterSchema,
+	buildAmostrasFilters,
+} from "@/lib/amostras-filters";
 
 const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
 
@@ -37,19 +41,9 @@ const DEFAULT_FIELDS = [
 	"idadeEstimada",
 ] as const;
 
-const planilhaQuerySchema = z.object({
-	from: z.string().optional(),
-	to: z.string().optional(),
-	municipio: z.string().optional(),
-	uf: z.string().length(2).optional(),
+const planilhaQuerySchema = amostrasFilterSchema.extend({
 	fields: z.string().optional(),
 });
-
-function parseDate(value: string | undefined): Date | null | undefined {
-	if (value === undefined) return undefined;
-	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? null : date;
-}
 
 function cellValue(value: unknown): string | number {
 	if (value == null) return "";
@@ -83,24 +77,15 @@ export const amostrasPlanilhaRoutes = new Elysia({ prefix: "/amostras" }).get(
 			}
 		}
 
-		const from = parseDate(query.from);
-		const to = parseDate(query.to);
-		if (from === null || to === null) {
-			return status(400, {
-				message: "Data invalida em 'from' ou 'to'.",
-			});
+		const filters = buildAmostrasFilters(query);
+		if (!filters.ok) {
+			return status(400, { message: filters.message });
 		}
-
-		const filters: SQL[] = [];
-		if (from) filters.push(gte(amostras.createdAt, from));
-		if (to) filters.push(lte(amostras.createdAt, to));
-		if (query.municipio) filters.push(eq(amostras.municipio, query.municipio));
-		if (query.uf) filters.push(eq(amostras.uf, query.uf));
 
 		const rows = await db
 			.select()
 			.from(amostras)
-			.where(filters.length > 0 ? and(...filters) : undefined)
+			.where(filters.where)
 			.orderBy(desc(amostras.createdAt));
 
 		const workbook = new ExcelJS.Workbook();
