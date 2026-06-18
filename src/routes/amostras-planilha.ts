@@ -1,9 +1,10 @@
-import { desc } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { Elysia } from "elysia";
 import ExcelJS from "exceljs";
 import { z } from "zod";
 import { db } from "@/db";
 import { amostras, amostrasSelectSchema } from "@/db/schema/amostras";
+import { avaliadores } from "@/db/schema/avaliadores";
 import {
 	amostrasFilterSchema,
 	buildAmostrasFilters,
@@ -11,14 +12,37 @@ import {
 
 const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
 
-// Colunas da amostra que podem virar coluna da planilha (exclui metadados)
-const ALLOWED_FIELDS = Object.keys(amostrasSelectSchema.shape).filter(
-	(field) => !META_FIELDS.has(field),
-);
+// Colunas derivadas de joins (nao sao colunas da tabela amostras)
+const VIRTUAL_FIELDS = ["avaliador"] as const;
+
+// Campos com valor calculado (sobrescreve leitura direta da row)
+const FIELD_RESOLVERS: Record<
+	string,
+	(row: Record<string, unknown>) => unknown
+> = {
+	// Junta ddd + telefone numa unica coluna
+	telefone: (row) => {
+		const ddd = row.ddd ? String(row.ddd) : "";
+		const telefone = row.telefone ? String(row.telefone) : "";
+		if (!telefone) return "";
+		return ddd ? `(${ddd}) ${telefone}` : telefone;
+	},
+};
+
+// Colunas que podem virar coluna da planilha (exclui metadados, inclui joins)
+const ALLOWED_FIELDS = [
+	...Object.keys(amostrasSelectSchema.shape).filter(
+		(field) => !META_FIELDS.has(field),
+	),
+	...VIRTUAL_FIELDS,
+];
 const ALLOWED_FIELDS_SET = new Set(ALLOWED_FIELDS);
 
 // Conjunto padrao de colunas (ordem = ordem das colunas na planilha)
 const DEFAULT_FIELDS = [
+	"avaliador",
+	"proponente",
+	"telefone",
 	"endereco",
 	"bairro",
 	"municipio",
@@ -39,6 +63,11 @@ const DEFAULT_FIELDS = [
 	"padraoAcabamento",
 	"estadoConservacao",
 	"idadeEstimada",
+	"infraestrutura",
+	"servicosPublicos",
+	"usosPredominantes",
+	"viaAcesso",
+	"regiaoContexto",
 ] as const;
 
 const planilhaQuerySchema = amostrasFilterSchema.extend({
@@ -83,8 +112,12 @@ export const amostrasPlanilhaRoutes = new Elysia({ prefix: "/amostras" }).get(
 		}
 
 		const rows = await db
-			.select()
+			.select({
+				...getTableColumns(amostras),
+				avaliador: avaliadores.nome,
+			})
 			.from(amostras)
+			.leftJoin(avaliadores, eq(amostras.avaliadorId, avaliadores.id))
 			.where(filters.where)
 			.orderBy(desc(amostras.createdAt));
 
@@ -99,10 +132,12 @@ export const amostrasPlanilhaRoutes = new Elysia({ prefix: "/amostras" }).get(
 		sheet.getRow(1).font = { bold: true, size: 12 };
 
 		for (const row of rows) {
+			const record = row as Record<string, unknown>;
 			sheet.addRow(
-				fields.map((field) =>
-					cellValue((row as Record<string, unknown>)[field]),
-				),
+				fields.map((field) => {
+					const resolver = FIELD_RESOLVERS[field];
+					return cellValue(resolver ? resolver(record) : record[field]);
+				}),
 			);
 		}
 
