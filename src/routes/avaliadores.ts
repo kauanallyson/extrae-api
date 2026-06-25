@@ -1,110 +1,124 @@
 import { eq } from "drizzle-orm";
-import { Elysia } from "elysia";
+import { Router } from "express";
 import { db } from "@/db";
 import {
-	avaliadores,
-	avaliadoresInsertSchema,
-	avaliadoresUpdateSchema,
+  avaliadores,
+  avaliadoresInsertSchema,
+  avaliadoresUpdateSchema,
 } from "@/db/schema/avaliadores";
 import { mapDatabaseError } from "@/lib/http";
 import { idParamsSchema } from "@/lib/schemas";
 
-export const avaliadoresRoutes = new Elysia({ prefix: "/avaliadores" })
-	.get("/", async () => {
-		const result = await db
-			.select()
-			.from(avaliadores)
-			.orderBy(avaliadores.id);
-		return result;
-	})
-	.get(
-		"/:id",
-		async ({ params: { id }, status }) => {
-			const result = await db
-				.select()
-				.from(avaliadores)
-				.where(eq(avaliadores.id, id))
-				.limit(1);
+export const avaliadoresRouter = Router();
 
-			if (result.length === 0) {
-				return status(404, {
-					message: `Avaliador com id: ${id} não encontrado`,
-				});
-			}
+avaliadoresRouter.get("/", async (_req, res) => {
+  const result = await db.select().from(avaliadores).orderBy(avaliadores.id);
+  res.json(result);
+});
 
-			return result[0];
-		},
-		{
-			params: idParamsSchema,
-		},
-	)
-	.post(
-		"/",
-		async ({ body, status }) => {
-			try {
-				const result = await db.insert(avaliadores).values(body).returning();
-				return status(201, result[0]);
-			} catch (e) {
-				const response = mapDatabaseError(e, {
-					conflict: "Ja existe um avaliador com estes dados.",
-					foreignKey: "Nao foi possivel relacionar este avaliador.",
-					invalid: "Os dados do avaliador sao invalidos.",
-					default: "Ocorreu um erro ao salvar o avaliador.",
-				});
-				return status(response.status, response.body);
-			}
-		},
-		{ body: avaliadoresInsertSchema },
-	)
-	.put(
-		"/:id",
-		async ({ params: { id }, body, status }) => {
-			try {
-				const result = await db
-					.update(avaliadores)
-					.set(body)
-					.where(eq(avaliadores.id, id))
-					.returning();
+avaliadoresRouter.get("/:id", async (req, res) => {
+  const parsed = idParamsSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return void res.status(400).json({ message: "ID inválido" });
+  }
 
-				if (result.length === 0) {
-					return status(404, {
-						message: `Avaliador com id: ${id} não encontrado`,
-					});
-				}
+  const result = await db
+    .select()
+    .from(avaliadores)
+    .where(eq(avaliadores.id, parsed.data.id))
+    .limit(1);
 
-				return status(200, result[0]);
-			} catch (e) {
-				const response = mapDatabaseError(e, {
-					conflict: "Ja existe um avaliador com estes dados.",
-					foreignKey: "Nao foi possivel relacionar este avaliador.",
-					invalid: "Os dados do avaliador sao invalidos.",
-					default: "Ocorreu um erro ao atualizar o avaliador.",
-				});
-				return status(response.status, response.body);
-			}
-		},
-		{
-			body: avaliadoresUpdateSchema,
-			params: idParamsSchema,
-		},
-	)
-	.delete(
-		"/:id",
-		async ({ params: { id }, status }) => {
-			const result = await db
-				.delete(avaliadores)
-				.where(eq(avaliadores.id, id))
-				.returning();
+  if (result.length === 0) {
+    return void res.status(404).json({
+      message: `Avaliador com id: ${parsed.data.id} não encontrado`,
+    });
+  }
 
-			if (result.length === 0) {
-				return status(404, {
-					message: `Avaliador com id: ${id} não encontrado`,
-				});
-			}
+  res.json(result[0]);
+});
 
-			return status(200, result[0]);
-		},
-		{
-			params: idParamsSchema,
-		},
-	);
+avaliadoresRouter.post("/", async (req, res) => {
+  const bodyParsed = avaliadoresInsertSchema.safeParse(req.body);
+  if (!bodyParsed.success) {
+    return void res.status(400).json({
+      message: bodyParsed.error.issues[0]?.message ?? "Body inválido",
+    });
+  }
+
+  try {
+    const result = await db
+      .insert(avaliadores)
+      .values(bodyParsed.data)
+      .returning();
+
+    res.status(201).json(result[0]);
+  } catch (e) {
+    const response = mapDatabaseError(e, {
+      conflict: "Ja existe um avaliador com estes dados.",
+      foreignKey: "Nao foi possivel relacionar este avaliador.",
+      invalid: "Os dados do avaliador sao invalidos.",
+      default: "Ocorreu um erro ao salvar o avaliador.",
+    });
+
+    res.status(response.status).json(response.body);
+  }
+});
+
+avaliadoresRouter.put("/:id", async (req, res) => {
+  const paramsParsed = idParamsSchema.safeParse(req.params);
+  if (!paramsParsed.success) {
+    return void res.status(400).json({ message: "ID inválido" });
+  }
+
+  const bodyParsed = avaliadoresUpdateSchema.safeParse(req.body);
+  if (!bodyParsed.success) {
+    return void res.status(400).json({
+      message: bodyParsed.error.issues[0]?.message ?? "Body inválido",
+    });
+  }
+
+  try {
+    const result = await db
+      .update(avaliadores)
+      .set(bodyParsed.data)
+      .where(eq(avaliadores.id, paramsParsed.data.id))
+      .returning();
+
+    if (result.length === 0) {
+      return void res.status(404).json({
+        message: `Avaliador com id: ${paramsParsed.data.id} não encontrado`,
+      });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (e) {
+    const response = mapDatabaseError(e, {
+      conflict: "Ja existe um avaliador com estes dados.",
+      foreignKey: "Nao foi possivel relacionar este avaliador.",
+      invalid: "Os dados do avaliador sao invalidos.",
+      default: "Ocorreu um erro ao atualizar o avaliador.",
+    });
+	
+    res.status(response.status).json(response.body);
+  }
+});
+
+avaliadoresRouter.delete("/:id", async (req, res) => {
+  const parsed = idParamsSchema.safeParse(req.params);
+  if (!parsed.success) {
+    return void res.status(400).json({ message: "ID inválido" });
+  }
+
+  const result = await db
+    .delete(avaliadores)
+    .where(eq(avaliadores.id, parsed.data.id))
+    .returning();
+
+  if (result.length === 0) {
+    return void res.status(404).json({
+      message: `Avaliador com id: ${parsed.data.id} não encontrado`,
+    });
+  }
+
+  res.status(200).json(result[0]);
+});

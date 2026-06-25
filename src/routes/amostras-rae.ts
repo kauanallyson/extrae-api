@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { Elysia } from "elysia";
+import { Router } from "express";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
 import { amostras } from "@/db/schema/amostras";
@@ -32,56 +32,58 @@ function writeEntries(
 	}
 }
 
-export const amostrasRaeRoutes = new Elysia({ prefix: "/amostras" }).get(
-	"/:id/rae",
-	async ({ params: { id }, set, status }) => {
-		const [amostra] = await db
-			.select()
-			.from(amostras)
-			.where(eq(amostras.id, id));
+export const amostrasRaeRouter = Router();
 
-		if (!amostra) {
-			return status(404, {
-				message: `Amostra com id: ${id} não encontrada`,
-			});
-		}
+amostrasRaeRouter.get("/:id/rae", async (req, res) => {
+	const parsed = idParamsSchema.safeParse(req.params);
+	if (!parsed.success) {
+		return void res.status(400).json({ message: "ID inválido" });
+	}
 
-		// Busca o avaliador vinculado ao amostra
-		const [avaliador] = await db
-			.select()
-			.from(avaliadores)
-			.where(eq(avaliadores.id, amostra.avaliadorId));
+	const [amostra] = await db
+		.select()
+		.from(amostras)
+		.where(eq(amostras.id, parsed.data.id));
 
-		const workbook = new ExcelJS.Workbook();
-		const sheet = workbook.addWorksheet("Dados RAE");
+	if (!amostra) {
+		return void res.status(404).json({
+			message: `Amostra com id: ${parsed.data.id} não encontrada`,
+		});
+	}
 
-		sheet.columns = [
-			{ header: "Campo", key: "field", width: 25 },
-			{ header: "Valor", key: "value", width: 50 },
-		];
+	const [avaliador] = await db
+		.select()
+		.from(avaliadores)
+		.where(eq(avaliadores.id, amostra.avaliadorId));
 
-		sheet.getRow(1).font = { bold: true, size: 12 };
+	const workbook = new ExcelJS.Workbook();
+	const sheet = workbook.addWorksheet("Dados RAE");
 
-		// Escreve os dados do avaliador primeiro (sem o id)
-		if (avaliador) {
-			writeEntries(sheet, Object.entries(avaliador), new Set(["id"]));
-		}
+	sheet.columns = [
+		{ header: "Campo", key: "field", width: 25 },
+		{ header: "Valor", key: "value", width: 50 },
+	];
 
-		// Escreve os dados do amostra (sem id, avaliadorId, createdAt, updatedAt)
-		writeEntries(sheet, Object.entries(amostra), EXCLUDED_FIELDS);
+	sheet.getRow(1).font = { bold: true, size: 12 };
 
-		const buffer = await workbook.xlsx.writeBuffer();
+	if (avaliador) {
+		writeEntries(sheet, Object.entries(avaliador), new Set(["id"]));
+	}
 
-		set.headers["Content-Type"] =
-			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	writeEntries(sheet, Object.entries(amostra), EXCLUDED_FIELDS);
 
-		const firstName = amostra.proponente?.trim().split(" ")[0] ?? "cliente";
-		set.headers["Content-Disposition"] =
-			`attachment; filename="dados-rae-${firstName}.xlsx"`;
+	const buffer = await workbook.xlsx.writeBuffer();
 
-		return buffer;
-	},
-	{
-		params: idParamsSchema,
-	},
-);
+	res.setHeader(
+		"Content-Type",
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	);
+
+	const firstName = amostra.proponente?.trim().split(" ")[0] ?? "cliente";
+	res.setHeader(
+		"Content-Disposition",
+		`attachment; filename="dados-rae-${firstName}.xlsx"`,
+	);
+
+	res.send(Buffer.from(buffer));
+});

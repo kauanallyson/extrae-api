@@ -1,28 +1,30 @@
-import { cors } from "@elysiajs/cors";
-import openapi from "@elysiajs/openapi";
-import { Elysia } from "elysia";
-import { amostrasRoutes } from "./routes/amostras";
-import { amostrasAiRoutes } from "./routes/amostras-ai";
-import { amostrasPlanilhaRoutes } from "./routes/amostras-planilha";
-import { amostrasRaeRoutes } from "./routes/amostras-rae";
-import { avaliadoresRoutes } from "./routes/avaliadores";
+import cors from "cors";
+import express from "express";
+import { amostrasAiRouter } from "./routes/amostras-ai";
+import { amostrasPlanilhaRouter } from "./routes/amostras-planilha";
+import { amostrasRaeRouter } from "./routes/amostras-rae";
+import { amostrasRouter } from "./routes/amostras";
+import { avaliadoresRouter } from "./routes/avaliadores";
+import { env } from "./env";
 
-const app = new Elysia()
-	.use(
-		cors({
-			origin: "https://extrae.vercel.app",
-			exposeHeaders: ["Content-Disposition"],
-		}),
-	)
-	.use(openapi())
-	.get("/health", () => ({ status: "ok" }))
-	.use(amostrasPlanilhaRoutes)
-	.use(amostrasRoutes)
-	.use(amostrasAiRoutes)
-	.use(amostrasRaeRoutes)
-	.use(avaliadoresRoutes)
-	.listen({ hostname: "0.0.0.0", port: 3000 });
+const app = express();
 
-console.log(
-	`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
+app.use(
+  cors({
+    origin: "https://extrae.vercel.app",
+    exposedHeaders: ["Content-Disposition"],
+  }),
 );
+app.use(express.json());
+
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+app.use("/amostras", amostrasPlanilhaRouter);
+app.use("/amostras/ia", amostrasAiRouter);
+app.use("/amostras", amostrasRaeRouter);
+app.use("/amostras", amostrasRouter);
+app.use("/avaliadores", avaliadoresRouter);
+
+app.listen(env.PORT, "0.0.0.0", () => {
+  console.log(`Express is running at http://0.0.0.0:${env.PORT}`);
+});
