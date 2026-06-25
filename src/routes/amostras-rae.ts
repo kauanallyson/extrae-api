@@ -79,10 +79,11 @@ amostrasRaeRouter.get("/:id/rae", async (req, res) => {
 		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 	);
 
-	const firstName = amostra.proponente?.trim().split(" ")[0] ?? "cliente";
+	const rawFirst = amostra.proponente?.trim().split(" ")[0] ?? "";
+	const safeFirst = rawFirst.replace(/[^a-zA-Z0-9À-ɏ]/g, "") || "cliente";
 	res.setHeader(
 		"Content-Disposition",
-		`attachment; filename="dados-rae-${firstName}.xlsx"`,
+		`attachment; filename="dados-rae-${safeFirst}.xlsx"`,
 	);
 
 	res.send(Buffer.from(buffer));

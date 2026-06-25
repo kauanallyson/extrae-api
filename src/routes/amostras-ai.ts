@@ -5,15 +5,13 @@ import { amostrasInsertSchema } from "@/db/schema/amostras";
 import { openai } from "@/lib/ai/openai";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-const aiSchema = amostrasInsertSchema
-  .omit({
-    avaliadorId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .required();
+const aiSchema = amostrasInsertSchema.omit({
+  avaliadorId: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const amostrasAiRouter = Router();
 
@@ -23,6 +21,11 @@ amostrasAiRouter.post("/", upload.single("pdf"), async (req, res) => {
   }
   if (req.file.mimetype !== "application/pdf") {
     return void res.status(400).json({ message: "O arquivo deve ser um pdf" });
+  }
+
+  const pdfMagic = Buffer.from([0x25, 0x50, 0x44, 0x46]);
+  if (!req.file.buffer.subarray(0, 4).equals(pdfMagic)) {
+    return void res.status(400).json({ message: "O arquivo deve ser um pdf válido" });
   }
 
   const base64 = req.file.buffer.toString("base64");

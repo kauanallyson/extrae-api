@@ -109,16 +109,27 @@ avaliadoresRouter.delete("/:id", async (req, res) => {
     return void res.status(400).json({ message: "ID inválido" });
   }
 
-  const result = await db
-    .delete(avaliadores)
-    .where(eq(avaliadores.id, parsed.data.id))
-    .returning();
+  try {
+    const result = await db
+      .delete(avaliadores)
+      .where(eq(avaliadores.id, parsed.data.id))
+      .returning();
 
-  if (result.length === 0) {
-    return void res.status(404).json({
-      message: `Avaliador com id: ${parsed.data.id} não encontrado`,
+    if (result.length === 0) {
+      return void res.status(404).json({
+        message: `Avaliador com id: ${parsed.data.id} não encontrado`,
+      });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (e) {
+    const response = mapDatabaseError(e, {
+      conflict: "Ja existe um avaliador com estes dados.",
+      foreignKey: "Nao foi possivel remover este avaliador pois possui amostras vinculadas.",
+      invalid: "Os dados do avaliador sao invalidos.",
+      default: "Ocorreu um erro ao remover o avaliador.",
     });
-  }
 
-  res.status(200).json(result[0]);
+    res.status(response.status).json(response.body);
+  }
 });

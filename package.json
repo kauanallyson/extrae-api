@@ -21,6 +21,8 @@
     "drizzle-zod": "^0.8.3",
     "exceljs": "^3.4.0",
     "express": "^4.21.2",
+    "express-async-errors": "^3.1.1",
+    "helmet": "^8.2.0",
     "multer": "^2.0.1",
     "openai": "^6.41.0",
     "pdfjs-dist": "^5.7.284",
