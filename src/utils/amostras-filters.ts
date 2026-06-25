@@ -1,6 +1,6 @@
 import { and, eq, gte, lte, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { amostras } from "@/db/schema/amostras";
+import { amostras } from "@/models/amostras";
 
 export const amostrasFilterSchema = z.object({
   from: z.string().optional(),

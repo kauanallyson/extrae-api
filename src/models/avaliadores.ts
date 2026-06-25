@@ -4,7 +4,7 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-zod";
-import { cnpjSchema, cpfSchema } from "@/lib/schemas";
+import { cnpjSchema, cpfSchema } from "@/utils/schemas";
 
 export const avaliadores = pgTable("avaliadores", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

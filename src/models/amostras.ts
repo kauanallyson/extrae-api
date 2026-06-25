@@ -19,7 +19,7 @@ import {
   cpfSchema,
   dddSchema,
   telefoneSchema,
-} from "@/lib/schemas";
+} from "@/utils/schemas";
 import { avaliadores } from "./avaliadores";
 
 export const amostras = pgTable("amostras", {
