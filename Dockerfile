@@ -1,19 +1,20 @@
-FROM oven/bun:latest
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy configuration files
-COPY package.json bun.lock tsconfig.json drizzle.config.ts ./
+COPY package.json package-lock.json tsconfig.json drizzle.config.ts ./
 
-# Install dependencies
-RUN bun install
+RUN npm ci
 
-# Copy source code and migrations
 COPY ./src ./src
 COPY ./drizzle ./drizzle
 
+RUN chown -R node:node /app
+
 ENV NODE_ENV=production
 
-CMD ["sh", "-c", "bun db:migrate && bun run src/index.ts"]
-
 EXPOSE 3000
+
+USER node
+
+CMD ["sh", "-c", "npm run db:migrate && npm run start"]
