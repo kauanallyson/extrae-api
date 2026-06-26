@@ -1,14 +1,25 @@
 import type { Request, Response } from "express";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import { amostrasInsertSchema } from "@/models/amostras";
 import { openai } from "@/services/openai";
 import { SYSTEM_PROMPT } from "@/services/prompt";
 
-const aiSchema = amostrasInsertSchema.omit({
-  avaliadorId: true,
-  createdAt: true,
-  updatedAt: true,
-});
+function optionalToNullable<T extends z.ZodRawShape>(schema: z.ZodObject<T>) {
+  const newShape = Object.fromEntries(
+    Object.entries(schema.shape).map(([key, value]) => {
+      if (value instanceof z.ZodOptional) {
+        return [key, z.nullable(value.unwrap())];
+      }
+      return [key, value];
+    })
+  ) as T;
+  return z.object(newShape);
+}
+
+const aiSchema = optionalToNullable(
+  amostrasInsertSchema.omit({ avaliadorId: true, createdAt: true, updatedAt: true })
+);
 
 export async function extractAmostraFromPdf(req: Request, res: Response) {
   if (!req.file) {
