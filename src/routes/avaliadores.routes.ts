@@ -1,11 +1,11 @@
 import { Router } from "express";
 import {
-  createAvaliador,
-  deleteAvaliador,
-  getAvaliadorById,
-  getAvaliadores,
-  updateAvaliador,
-} from "@/controllers/avaliadoresController";
+	createAvaliador,
+	deleteAvaliador,
+	getAvaliadorById,
+	getAvaliadores,
+	updateAvaliador,
+} from "@/controllers/avaliadores.controller";
 
 export const avaliadoresRouter = Router();
 
