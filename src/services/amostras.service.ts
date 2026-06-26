@@ -87,11 +87,20 @@ export async function updateAmostra(id: number, data: AmostraUpdate) {
 }
 
 export async function deleteAmostra(id: number) {
-	const [row] = await db
-		.delete(amostras)
-		.where(eq(amostras.id, id))
-		.returning();
+	try {
+		const [row] = await db
+			.delete(amostras)
+			.where(eq(amostras.id, id))
+			.returning();
 
-	if (!row) throw notFound(id);
-	return row;
+		if (!row) throw notFound(id);
+		return row;
+	} catch (e) {
+		if (e instanceof HttpError) throw e;
+		const response = mapDatabaseError(e, {
+			...WRITE_ERRORS,
+			default: "Ocorreu um erro ao remover a amostra.",
+		});
+		throw new HttpError(response.status, response.body);
+	}
 }

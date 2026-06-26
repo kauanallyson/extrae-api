@@ -1,8 +1,5 @@
 import { Router } from "express";
 import multer from "multer";
-import { extractAmostraFromPdf } from "@/controllers/amostras-ai.controller";
-import { downloadPlanilha } from "@/controllers/amostras-planilha.controller";
-import { downloadRae } from "@/controllers/amostras-rae.controller";
 import {
 	createAmostra,
 	deleteAmostra,
@@ -10,6 +7,9 @@ import {
 	getAmostras,
 	updateAmostra,
 } from "@/controllers/amostras.controller";
+import { extractAmostraFromPdf } from "@/controllers/amostras-ai.controller";
+import { downloadPlanilha } from "@/controllers/amostras-planilha.controller";
+import { downloadRae } from "@/controllers/amostras-rae.controller";
 
 const upload = multer({
 	storage: multer.memoryStorage(),

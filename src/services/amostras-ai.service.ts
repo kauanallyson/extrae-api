@@ -1,8 +1,8 @@
 import { zodResponseFormat } from "openai/helpers/zod";
 import { amostrasInsertSchema } from "@/models/amostras.model";
 import { openai } from "@/services/openai.service";
-import { SYSTEM_PROMPT } from "@/utils/prompt";
 import { HttpError } from "@/utils/http-error";
+import { SYSTEM_PROMPT } from "@/utils/prompt";
 
 const aiSchema = amostrasInsertSchema.omit({
 	avaliadorId: true,
@@ -43,7 +43,12 @@ export async function extractAmostraFromPdf(file: Express.Multer.File) {
 		response_format: zodResponseFormat(aiSchema, "amostra_extraido"),
 	});
 
-	const message = response.choices[0].message;
+	const choice = response.choices?.[0];
+	if (!choice) {
+		throw new HttpError(500, { message: "Erro na OpenAI" });
+	}
+
+	const message = choice.message;
 
 	if (message.refusal) {
 		throw new HttpError(400, { message: message.refusal });
