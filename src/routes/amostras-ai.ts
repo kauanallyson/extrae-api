@@ -6,4 +6,4 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 export const amostrasAiRouter = Router();
 
-amostrasAiRouter.post("/", upload.single("file"), extractAmostraFromPdf);
+amostrasAiRouter.post("/", upload.single("pdf"), extractAmostraFromPdf);
