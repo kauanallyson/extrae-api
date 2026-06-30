@@ -7,19 +7,8 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "drizzle-zod";
-import { z } from "zod";
-import {
-	cepSchema,
-	cnpjSchema,
-	cpfSchema,
-	dddSchema,
-	telefoneSchema,
-} from "@/utils/schemas";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import type { z } from "zod";
 import { avaliadores } from "./avaliadores.model";
 
 export const amostras = pgTable("amostras", {
@@ -28,37 +17,33 @@ export const amostras = pgTable("amostras", {
 		.references(() => avaliadores.id)
 		.notNull(),
 	proponente: text(),
-	cpf: varchar({ length: 14 }),
-	cnpj: varchar({ length: 18 }),
+	cpf: char({ length: 14 }),
+	cnpj: char({ length: 18 }),
 	ddd: varchar({ length: 3 }),
-	telefone: varchar({ length: 20 }),
+	telefone: varchar({ length: 9 }),
 	endereco: text(),
 	coordenadaS: text(),
 	coordenadaW: text(),
 	complemento: text(),
 	bairro: text(),
-	cep: varchar({ length: 15 }),
+	cep: char({ length: 9 }),
 	municipio: text(),
 	uf: char({ length: 2 }),
 	empresaResponsavel: text(),
-	valorTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
+	valorTerreno: numeric(),
 	matricula: text(),
 	oficio: text(),
 	comarca: text(),
 	ufMatricula: char({ length: 2 }),
-	valorImovel: numeric({ precision: 14, scale: 2, mode: "number" }),
-	incidencias: numeric({ precision: 10, scale: 4, mode: "number" }).array(),
+	valorImovel: numeric(),
+	incidencias: numeric().array(),
+	acumuladoProposto: numeric().array(),
 	numeroEtapas: integer(),
-	acumuladoProposto: numeric({
-		precision: 10,
-		scale: 4,
-		mode: "number",
-	}).array(),
-	valorUnitario: numeric({ precision: 14, scale: 2, mode: "number" }),
-	testada: numeric({ precision: 14, scale: 2, mode: "number" }),
+	valorUnitario: numeric(),
+	testada: numeric(),
 	idadeEstimada: text(),
-	areaTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
-	areaConstruida: numeric({ precision: 14, scale: 2, mode: "number" }),
+	areaTerreno: numeric(),
+	areaConstruida: numeric(),
 	quartos: integer(),
 	banheiros: integer(),
 	suites: integer(),
@@ -78,25 +63,10 @@ export const amostras = pgTable("amostras", {
 		.notNull(),
 });
 
-export const amostrasSelectSchema = createSelectSchema(amostras);
+export const selectAmostraSchema = createSelectSchema(amostras);
+export const insertAmostraSchema = createInsertSchema(amostras);
+export const updateAmostraSchema = insertAmostraSchema.partial();
 
-export const amostrasInsertSchema = createInsertSchema(amostras, {
-	dataReferencia: z.string(),
-	cpf: cpfSchema.nullable(),
-	cnpj: cnpjSchema.nullable(),
-	cep: cepSchema.nullable(),
-	ddd: dddSchema.nullable(),
-	telefone: telefoneSchema.nullable(),
-	createdAt: z.never().optional(),
-	updatedAt: z.never().optional(),
-});
-
-export const amostrasUpdateSchema = createUpdateSchema(amostras, {
-	cpf: cpfSchema.nullable(),
-	cnpj: cnpjSchema.nullable(),
-	cep: cepSchema.nullable(),
-	ddd: dddSchema.nullable(),
-	telefone: telefoneSchema.nullable(),
-	createdAt: z.never().optional(),
-	updatedAt: z.never().optional(),
-});
+export type SelectAmostra = z.infer<typeof selectAmostraSchema>;
+export type InsertAmostra = z.infer<typeof insertAmostraSchema>;
+export type UpdateAmostra = z.infer<typeof updateAmostraSchema>;

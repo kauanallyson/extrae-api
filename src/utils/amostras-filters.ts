@@ -40,13 +40,13 @@ export function buildAmostrasFilters(
 	if (query.municipio) filters.push(eq(amostras.municipio, query.municipio));
 	if (query.uf) filters.push(eq(amostras.uf, query.uf));
 	if (query.valorImovelMin !== undefined)
-		filters.push(gte(amostras.valorImovel, query.valorImovelMin));
+		filters.push(gte(amostras.valorImovel, String(query.valorImovelMin)));
 	if (query.valorImovelMax !== undefined)
-		filters.push(lte(amostras.valorImovel, query.valorImovelMax));
+		filters.push(lte(amostras.valorImovel, String(query.valorImovelMax)));
 	if (query.valorTerrenoMin !== undefined)
-		filters.push(gte(amostras.valorTerreno, query.valorTerrenoMin));
+		filters.push(gte(amostras.valorTerreno, String(query.valorTerrenoMin)));
 	if (query.valorTerrenoMax !== undefined)
-		filters.push(lte(amostras.valorTerreno, query.valorTerrenoMax));
+		filters.push(lte(amostras.valorTerreno, String(query.valorTerrenoMax)));
 
 	return { ok: true, where: filters.length > 0 ? and(...filters) : undefined };
 }
