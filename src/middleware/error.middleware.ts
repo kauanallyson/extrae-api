@@ -1,7 +1,7 @@
 import type express from "express";
 import { HttpError } from "@/utils/http-error";
 
-export function errorHandler(
+export function errorMiddleware(
 	err: Error,
 	_req: express.Request,
 	res: express.Response,
