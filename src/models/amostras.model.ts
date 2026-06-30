@@ -7,19 +7,8 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "drizzle-zod";
-import { z } from "zod";
-import {
-	cepSchema,
-	cnpjSchema,
-	cpfSchema,
-	dddSchema,
-	telefoneSchema,
-} from "@/utils/schemas";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import type { z } from "zod";
 import { avaliadores } from "./avaliadores.model";
 
 export const amostras = pgTable("amostras", {
@@ -28,16 +17,16 @@ export const amostras = pgTable("amostras", {
 		.references(() => avaliadores.id)
 		.notNull(),
 	proponente: text(),
-	cpf: varchar({ length: 14 }),
-	cnpj: varchar({ length: 18 }),
+	cpf: char({ length: 14 }),
+	cnpj: char({ length: 18 }),
 	ddd: varchar({ length: 3 }),
-	telefone: varchar({ length: 20 }),
+	telefone: varchar({ length: 9 }),
 	endereco: text(),
 	coordenadaS: text(),
 	coordenadaW: text(),
 	complemento: text(),
 	bairro: text(),
-	cep: varchar({ length: 15 }),
+	cep: char({ length: 9 }),
 	municipio: text(),
 	uf: char({ length: 2 }),
 	empresaResponsavel: text(),
@@ -47,13 +36,9 @@ export const amostras = pgTable("amostras", {
 	comarca: text(),
 	ufMatricula: char({ length: 2 }),
 	valorImovel: numeric({ precision: 14, scale: 2, mode: "number" }),
-	incidencias: numeric({ precision: 10, scale: 4, mode: "number" }).array(),
+	incidencias: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
+	acumuladoProposto: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
 	numeroEtapas: integer(),
-	acumuladoProposto: numeric({
-		precision: 10,
-		scale: 4,
-		mode: "number",
-	}).array(),
 	valorUnitario: numeric({ precision: 14, scale: 2, mode: "number" }),
 	testada: numeric({ precision: 14, scale: 2, mode: "number" }),
 	idadeEstimada: text(),
@@ -78,25 +63,17 @@ export const amostras = pgTable("amostras", {
 		.notNull(),
 });
 
-export const amostrasSelectSchema = createSelectSchema(amostras);
-
-export const amostrasInsertSchema = createInsertSchema(amostras, {
-	dataReferencia: z.string(),
-	cpf: cpfSchema.nullable(),
-	cnpj: cnpjSchema.nullable(),
-	cep: cepSchema.nullable(),
-	ddd: dddSchema.nullable(),
-	telefone: telefoneSchema.nullable(),
-	createdAt: z.never().optional(),
-	updatedAt: z.never().optional(),
+export const selectAmostraSchema = createSelectSchema(amostras);
+export const insertAmostraSchema = createInsertSchema(amostras).omit({
+	createdAt: true,
+	updatedAt: true,
 });
+export const updateAmostraSchema = insertAmostraSchema
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, {
+		message: "Informe ao menos um campo para atualizar.",
+	});
 
-export const amostrasUpdateSchema = createUpdateSchema(amostras, {
-	cpf: cpfSchema.nullable(),
-	cnpj: cnpjSchema.nullable(),
-	cep: cepSchema.nullable(),
-	ddd: dddSchema.nullable(),
-	telefone: telefoneSchema.nullable(),
-	createdAt: z.never().optional(),
-	updatedAt: z.never().optional(),
-});
+export type SelectAmostra = z.infer<typeof selectAmostraSchema>;
+export type InsertAmostra = z.infer<typeof insertAmostraSchema>;
+export type UpdateAmostra = z.infer<typeof updateAmostraSchema>;

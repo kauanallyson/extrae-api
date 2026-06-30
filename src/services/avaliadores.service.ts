@@ -1,91 +1,81 @@
-import { eq } from "drizzle-orm";
-import type { z } from "zod";
-import { db } from "@/config/db";
-import {
-	avaliadores,
-	type avaliadoresInsertSchema,
-	type avaliadoresUpdateSchema,
+import type {
+	AvaliadorInsert,
+	AvaliadorSelect,
+	AvaliadorUpdate,
 } from "@/models/avaliadores.model";
+import {
+	createAvaliador,
+	deleteById,
+	findAll,
+	findById,
+	updateAvaliador,
+} from "@/repo/avaliadores.repo";
 import { mapDatabaseError } from "@/utils/db-errors";
 import { HttpError } from "@/utils/http-error";
 
-type AvaliadorInsert = z.infer<typeof avaliadoresInsertSchema>;
-type AvaliadorUpdate = z.infer<typeof avaliadoresUpdateSchema>;
+const WRITE_ERRORS = {
+	conflict: "Ja existe um avaliador com este CPF ou CNPJ.",
+	foreignKey: "Referencia invalida.",
+	invalid: "Os dados do avaliador sao invalidos.",
+};
 
-function notFound(id: number) {
-	return new HttpError(404, {
-		message: `Avaliador com id: ${id} não encontrado`,
-	});
+function notFound(id: number): HttpError {
+	return new HttpError(404, { message: `Avaliador ${id} nao encontrado.` });
 }
 
-export async function listAvaliadores() {
-	return db.select().from(avaliadores).orderBy(avaliadores.id);
+export async function listAvaliadores(): Promise<AvaliadorSelect[]> {
+	return findAll();
 }
 
-export async function getAvaliadorById(id: number) {
-	const [row] = await db
-		.select()
-		.from(avaliadores)
-		.where(eq(avaliadores.id, id))
-		.limit(1);
-
-	if (!row) throw notFound(id);
-	return row;
+export async function getAvaliadorById(
+	id: number,
+): Promise<AvaliadorSelect> {
+	const avaliador = await findById(id);
+	if (!avaliador) throw notFound(id);
+	return avaliador;
 }
 
-export async function createAvaliador(data: AvaliadorInsert) {
+export async function avaliadorCreate(
+	avaliadorRequest: AvaliadorInsert,
+): Promise<AvaliadorSelect | null> {
 	try {
-		const [row] = await db.insert(avaliadores).values(data).returning();
-		return row;
+		return await createAvaliador(avaliadorRequest);
 	} catch (e) {
 		const response = mapDatabaseError(e, {
-			conflict: "Ja existe um avaliador com estes dados.",
-			foreignKey: "Nao foi possivel relacionar este avaliador.",
-			invalid: "Os dados do avaliador sao invalidos.",
+			...WRITE_ERRORS,
 			default: "Ocorreu um erro ao salvar o avaliador.",
 		});
 		throw new HttpError(response.status, response.body);
 	}
 }
 
-export async function updateAvaliador(id: number, data: AvaliadorUpdate) {
+export async function avaliadorUpdate(
+	id: number,
+	avaliadorRequest: AvaliadorUpdate,
+): Promise<AvaliadorSelect> {
 	try {
-		const [row] = await db
-			.update(avaliadores)
-			.set(data)
-			.where(eq(avaliadores.id, id))
-			.returning();
-
-		if (!row) throw notFound(id);
-		return row;
+		const avaliador = await updateAvaliador(id, avaliadorRequest);
+		if (!avaliador) throw notFound(id);
+		return avaliador;
 	} catch (e) {
 		if (e instanceof HttpError) throw e;
 		const response = mapDatabaseError(e, {
-			conflict: "Ja existe um avaliador com estes dados.",
-			foreignKey: "Nao foi possivel relacionar este avaliador.",
-			invalid: "Os dados do avaliador sao invalidos.",
+			...WRITE_ERRORS,
 			default: "Ocorreu um erro ao atualizar o avaliador.",
 		});
 		throw new HttpError(response.status, response.body);
 	}
 }
 
-export async function deleteAvaliador(id: number) {
+export async function deleteAvaliador(id: number): Promise<AvaliadorSelect> {
 	try {
-		const [row] = await db
-			.delete(avaliadores)
-			.where(eq(avaliadores.id, id))
-			.returning();
-
-		if (!row) throw notFound(id);
-		return row;
+		const avaliador = await deleteById(id);
+		if (!avaliador) throw notFound(id);
+		return avaliador;
 	} catch (e) {
 		if (e instanceof HttpError) throw e;
 		const response = mapDatabaseError(e, {
-			conflict: "Ja existe um avaliador com estes dados.",
-			foreignKey:
-				"Nao foi possivel remover este avaliador pois possui amostras vinculadas.",
-			invalid: "Os dados do avaliador sao invalidos.",
+			...WRITE_ERRORS,
 			default: "Ocorreu um erro ao remover o avaliador.",
 		});
 		throw new HttpError(response.status, response.body);
