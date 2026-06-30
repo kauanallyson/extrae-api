@@ -59,7 +59,7 @@ export async function updateAvaliador(
 		.set(avaliadorRequest)
 		.where(eq(avaliadores.id, id))
 		.returning();
-	return row;
+	return row ?? null;
 }
 
 export async function deleteById(id: number): Promise<AvaliadorSelect | null> {
@@ -67,5 +67,5 @@ export async function deleteById(id: number): Promise<AvaliadorSelect | null> {
 		.delete(avaliadores)
 		.where(eq(avaliadores.id, id))
 		.returning();
-	return row;
+	return row ?? null;
 }

@@ -29,8 +29,10 @@ export async function listAvaliadores(): Promise<AvaliadorSelect[]> {
 
 export async function getAvaliadorById(
 	id: number,
-): Promise<AvaliadorSelect | null> {
-	return findById(id);
+): Promise<AvaliadorSelect> {
+	const avaliador = await findById(id);
+	if (!avaliador) throw notFound(id);
+	return avaliador;
 }
 
 export async function avaliadorCreate(
@@ -66,7 +68,16 @@ export async function avaliadorUpdate(
 }
 
 export async function deleteAvaliador(id: number): Promise<AvaliadorSelect> {
-	const avaliador = await deleteById(id);
-	if (!avaliador) throw notFound(id);
-	return avaliador;
+	try {
+		const avaliador = await deleteById(id);
+		if (!avaliador) throw notFound(id);
+		return avaliador;
+	} catch (e) {
+		if (e instanceof HttpError) throw e;
+		const response = mapDatabaseError(e, {
+			...WRITE_ERRORS,
+			default: "Ocorreu um erro ao remover o avaliador.",
+		});
+		throw new HttpError(response.status, response.body);
+	}
 }

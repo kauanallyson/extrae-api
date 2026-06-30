@@ -51,18 +51,25 @@ export async function listAmostras(
 	return findAll(filters.where);
 }
 
-export async function getAmostraById(
-	id: number,
-): Promise<SelectAmostra | null> {
-	return findById(id);
+export async function getAmostraById(id: number): Promise<SelectAmostra> {
+	const row = await findById(id);
+	if (!row) throw notFound(id);
+	return row;
 }
 
 export async function createAmostra(
 	data: InsertAmostra,
-): Promise<SelectAmostra | null> {
+): Promise<SelectAmostra> {
 	try {
-		return await createAmostraRepo(data);
+		const row = await createAmostraRepo(data);
+		if (!row) {
+			throw new HttpError(500, {
+				message: "Ocorreu um erro ao salvar a amostra.",
+			});
+		}
+		return row;
 	} catch (e) {
+		if (e instanceof HttpError) throw e;
 		const response = mapDatabaseError(e, {
 			...WRITE_ERRORS,
 			default: "Ocorreu um erro ao salvar a amostra.",
@@ -108,9 +115,7 @@ export async function deleteAmostra(id: number): Promise<SelectAmostra> {
 // AI extraction
 // ---------------------------------------------------------------------------
 
-const aiSchema = insertAmostraSchema
-	.omit({ avaliadorId: true, createdAt: true, updatedAt: true })
-	.required();
+const aiSchema = insertAmostraSchema.omit({ avaliadorId: true }).required();
 
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
 
@@ -375,7 +380,11 @@ export async function generateRae(id: number): Promise<{
 	const buffer = await workbook.xlsx.writeBuffer();
 
 	const rawFirst = amostra.proponente?.trim().split(" ")[0] ?? "";
-	const safeFirst = rawFirst.replace(/[^a-zA-Z0-9À-ɏ]/g, "") || "cliente";
+	const safeFirst =
+		rawFirst
+			.normalize("NFD")
+			.replace(/[̀-ͯ]/g, "")
+			.replace(/[^a-zA-Z0-9]/g, "") || "cliente";
 
 	return {
 		buffer: Buffer.from(buffer),

@@ -30,20 +30,20 @@ export const amostras = pgTable("amostras", {
 	municipio: text(),
 	uf: char({ length: 2 }),
 	empresaResponsavel: text(),
-	valorTerreno: numeric(),
+	valorTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
 	matricula: text(),
 	oficio: text(),
 	comarca: text(),
 	ufMatricula: char({ length: 2 }),
-	valorImovel: numeric(),
-	incidencias: numeric().array(),
-	acumuladoProposto: numeric().array(),
+	valorImovel: numeric({ precision: 14, scale: 2, mode: "number" }),
+	incidencias: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
+	acumuladoProposto: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
 	numeroEtapas: integer(),
-	valorUnitario: numeric(),
-	testada: numeric(),
+	valorUnitario: numeric({ precision: 14, scale: 2, mode: "number" }),
+	testada: numeric({ precision: 14, scale: 2, mode: "number" }),
 	idadeEstimada: text(),
-	areaTerreno: numeric(),
-	areaConstruida: numeric(),
+	areaTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
+	areaConstruida: numeric({ precision: 14, scale: 2, mode: "number" }),
 	quartos: integer(),
 	banheiros: integer(),
 	suites: integer(),
@@ -64,8 +64,15 @@ export const amostras = pgTable("amostras", {
 });
 
 export const selectAmostraSchema = createSelectSchema(amostras);
-export const insertAmostraSchema = createInsertSchema(amostras);
-export const updateAmostraSchema = insertAmostraSchema.partial();
+export const insertAmostraSchema = createInsertSchema(amostras).omit({
+	createdAt: true,
+	updatedAt: true,
+});
+export const updateAmostraSchema = insertAmostraSchema
+	.partial()
+	.refine((data) => Object.keys(data).length > 0, {
+		message: "Informe ao menos um campo para atualizar.",
+	});
 
 export type SelectAmostra = z.infer<typeof selectAmostraSchema>;
 export type InsertAmostra = z.infer<typeof insertAmostraSchema>;

@@ -42,7 +42,7 @@ export async function updateAmostra(
 		.set(data)
 		.where(eq(amostras.id, id))
 		.returning();
-	return row;
+	return row ?? null;
 }
 
 export async function deleteById(id: number): Promise<SelectAmostra | null> {
@@ -50,5 +50,5 @@ export async function deleteById(id: number): Promise<SelectAmostra | null> {
 		.delete(amostras)
 		.where(eq(amostras.id, id))
 		.returning();
-	return row;
+	return row ?? null;
 }
