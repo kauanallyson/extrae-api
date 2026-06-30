@@ -1,9 +1,9 @@
-import "express-async-errors";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { errorHandler } from "./middleware/error-handler.middleware";
-import { router } from "./routes";
+import { amostrasRouter } from "./controllers/amostras.controller";
+import { avaliadoresRouter } from "./controllers/avaliadores.controller";
+import { errorMiddleware } from "./middleware/error.middleware";
 
 const app = express();
 
@@ -18,7 +18,8 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-app.use(router);
-app.use(errorHandler);
+app.use("/amostras", amostrasRouter);
+app.use("/avaliadores", avaliadoresRouter);
+app.use(errorMiddleware);
 
 export { app };
