@@ -37,7 +37,11 @@ export const amostras = pgTable("amostras", {
 	ufMatricula: char({ length: 2 }),
 	valorImovel: numeric({ precision: 14, scale: 2, mode: "number" }),
 	incidencias: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
-	acumuladoProposto: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
+	acumuladoProposto: numeric({
+		precision: 14,
+		scale: 2,
+		mode: "number",
+	}).array(),
 	numeroEtapas: integer(),
 	valorUnitario: numeric({ precision: 14, scale: 2, mode: "number" }),
 	testada: numeric({ precision: 14, scale: 2, mode: "number" }),
@@ -64,10 +68,13 @@ export const amostras = pgTable("amostras", {
 });
 
 export const selectAmostraSchema = createSelectSchema(amostras);
-export const insertAmostraSchema = createInsertSchema(amostras).omit({
-	createdAt: true,
-	updatedAt: true,
-});
+export const insertAmostraSchema = createInsertSchema(amostras)
+	.omit({
+		createdAt: true,
+		updatedAt: true,
+	})
+	.partial()
+	.required({ avaliadorId: true });
 export const updateAmostraSchema = insertAmostraSchema
 	.partial()
 	.refine((data) => Object.keys(data).length > 0, {
