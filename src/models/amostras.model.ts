@@ -70,8 +70,17 @@ export const amostras = pgTable("amostras", {
 const stripNonDigits = (value: unknown): unknown =>
 	typeof value === "string" ? value.replace(/\D/g, "") : value;
 
+const normalizeCep = (value: unknown): unknown => {
+	if (typeof value !== "string") return value;
+	const digits = value.replace(/\D/g, "");
+	return digits.length === 8
+		? `${digits.slice(0, 5)}-${digits.slice(5)}`
+		: value;
+};
+
 export const selectAmostraSchema = createSelectSchema(amostras);
 export const insertAmostraSchema = createInsertSchema(amostras, {
+	cep: (schema) => z.preprocess(normalizeCep, schema),
 	telefone: (schema) => z.preprocess(stripNonDigits, schema),
 })
 	.omit({
