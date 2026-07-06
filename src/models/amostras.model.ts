@@ -8,7 +8,7 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import type { z } from "zod";
+import { z } from "zod";
 import { avaliadores } from "./avaliadores.model";
 
 export const amostras = pgTable("amostras", {
@@ -67,8 +67,13 @@ export const amostras = pgTable("amostras", {
 		.notNull(),
 });
 
+const stripNonDigits = (value: unknown): unknown =>
+	typeof value === "string" ? value.replace(/\D/g, "") : value;
+
 export const selectAmostraSchema = createSelectSchema(amostras);
-export const insertAmostraSchema = createInsertSchema(amostras)
+export const insertAmostraSchema = createInsertSchema(amostras, {
+	telefone: (schema) => z.preprocess(stripNonDigits, schema),
+})
 	.omit({
 		createdAt: true,
 		updatedAt: true,
