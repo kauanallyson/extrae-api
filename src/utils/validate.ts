@@ -8,8 +8,11 @@ export function parse<T>(
 ): T {
 	const result = schema.safeParse(data);
 	if (!result.success) {
+		const issue = result.error.issues[0];
+		const path = issue?.path.join(".");
+		const detail = issue ? (path ? `${path}: ${issue.message}` : issue.message) : message;
 		throw new HttpError(400, {
-			message: result.error.issues[0]?.message ?? message,
+			message: detail,
 		});
 	}
 	return result.data;
