@@ -107,8 +107,19 @@ export interface AmostraSimilar {
 	distanciaKm: number;
 }
 
+export type SimilaridadeAlvo = Pick<
+	SelectAmostra,
+	| "coordenadaS"
+	| "coordenadaW"
+	| "areaTerreno"
+	| "areaConstruida"
+	| "padraoAcabamento"
+	| "estadoConservacao"
+	| "dataReferencia"
+>;
+
 export function calcularScore(
-	alvo: SelectAmostra,
+	alvo: SimilaridadeAlvo,
 	candidata: SelectAmostra,
 	distKm: number,
 	raioKm: number,

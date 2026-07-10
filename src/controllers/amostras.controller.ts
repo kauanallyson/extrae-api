@@ -2,7 +2,9 @@ import { type Request, type Response, Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import {
+	estadoConservacaoEnum,
 	insertAmostraSchema,
+	padraoAcabamentoEnum,
 	updateAmostraSchema,
 } from "@/models/amostras.model";
 import * as amostrasService from "@/services/amostras.service";
@@ -18,7 +20,24 @@ import { parse } from "@/utils/validate";
 
 const similaresQuerySchema = z.object({
 	raioKm: z.coerce.number().positive().default(5),
-	limit: z.coerce.number().int().positive().default(5),
+	limit: z.coerce.number().int().positive().default(50),
+});
+
+function optionalNullable<T extends z.ZodTypeAny>(schema: T) {
+	return schema
+		.nullable()
+		.optional()
+		.transform((value) => value ?? null);
+}
+
+const similaresAlvoSchema = z.object({
+	coordenadaS: z.string().min(1, "coordenadaS é obrigatório"),
+	coordenadaW: z.string().min(1, "coordenadaW é obrigatório"),
+	areaTerreno: optionalNullable(z.number()),
+	areaConstruida: optionalNullable(z.number()),
+	padraoAcabamento: optionalNullable(z.enum(padraoAcabamentoEnum.enumValues)),
+	estadoConservacao: optionalNullable(z.enum(estadoConservacaoEnum.enumValues)),
+	dataReferencia: optionalNullable(z.string()),
 });
 
 const SPREADSHEET_CONTENT_TYPE =
@@ -68,6 +87,14 @@ amostrasRouter.get("/:id/similares", async (req: Request, res: Response) => {
 	const { id } = parse(idParamsSchema, req.params, "ID inválido");
 	const options = parse(similaresQuerySchema, req.query, "Query inválida");
 	res.json(await amostrasService.findAmostrasSimilares(id, options));
+});
+
+amostrasRouter.post("/similares", async (req: Request, res: Response) => {
+	const alvo = parse(similaresAlvoSchema, req.body, "Body inválido");
+	const options = parse(similaresQuerySchema, req.query, "Query inválida");
+	res.json(
+		await amostrasService.findAmostrasSimilaresPorCriterios(alvo, options),
+	);
 });
 
 amostrasRouter.get("/:id", async (req: Request, res: Response) => {

@@ -32,6 +32,7 @@ import {
 	type Estimativa,
 	estimarValores,
 	parseCoordenadaDms,
+	type SimilaridadeAlvo,
 } from "@/utils/amostras-similarity";
 import { mapDatabaseError } from "@/utils/db-errors";
 import { HttpError } from "@/utils/http-error";
@@ -76,22 +77,28 @@ export interface SimilaresResult {
 	estimativa: Estimativa | null;
 }
 
-export async function findAmostrasSimilares(
-	id: number,
-	options: { raioKm: number; limit: number },
-): Promise<SimilaresResult> {
-	const alvo = await findById(id);
-	if (!alvo) throw notFound(id);
+export interface SimilaresPorCriteriosResult {
+	similares: Array<{
+		amostra: SelectAmostra;
+		score: number;
+		distanciaKm: number;
+	}>;
+	estimativa: Estimativa | null;
+}
 
+async function calcularSimilares(
+	alvo: SimilaridadeAlvo,
+	options: { raioKm: number; limit: number },
+	invalidCoordsMessage: string,
+	excludeId?: number,
+): Promise<SimilaresPorCriteriosResult> {
 	const alvoLat = parseCoordenadaDms(alvo.coordenadaS);
 	const alvoLon = parseCoordenadaDms(alvo.coordenadaW);
 	if (alvoLat === null || alvoLon === null) {
-		throw new HttpError(422, {
-			message: `Amostra ${id} nao possui coordenadas validas para calcular similares.`,
-		});
+		throw new HttpError(422, { message: invalidCoordsMessage });
 	}
 
-	const candidatas = await findSimilaresCandidates(id);
+	const candidatas = await findSimilaresCandidates(excludeId);
 
 	const dentroDoRaio: AmostraSimilar[] = [];
 	for (const candidata of candidatas) {
@@ -111,10 +118,37 @@ export async function findAmostrasSimilares(
 		.slice(0, options.limit);
 
 	return {
-		amostra: alvo,
 		similares,
 		estimativa: similares.length > 0 ? estimarValores(similares) : null,
 	};
+}
+
+export async function findAmostrasSimilares(
+	id: number,
+	options: { raioKm: number; limit: number },
+): Promise<SimilaresResult> {
+	const alvo = await findById(id);
+	if (!alvo) throw notFound(id);
+
+	const resultado = await calcularSimilares(
+		alvo,
+		options,
+		`Amostra ${id} nao possui coordenadas validas para calcular similares.`,
+		id,
+	);
+
+	return { amostra: alvo, ...resultado };
+}
+
+export async function findAmostrasSimilaresPorCriterios(
+	alvo: SimilaridadeAlvo,
+	options: { raioKm: number; limit: number },
+): Promise<SimilaresPorCriteriosResult> {
+	return calcularSimilares(
+		alvo,
+		options,
+		"Coordenadas informadas nao sao validas para calcular similares.",
+	);
 }
 
 export async function createAmostra(

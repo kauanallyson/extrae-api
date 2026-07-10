@@ -27,20 +27,20 @@ export async function findById(id: number): Promise<SelectAmostra | null> {
 }
 
 export async function findSimilaresCandidates(
-	id: number,
+	excludeId?: number,
 ): Promise<SelectAmostra[]> {
+	const conditions = [
+		isNotNull(amostras.coordenadaS),
+		isNotNull(amostras.coordenadaW),
+		isNotNull(amostras.valorImovel),
+		isNotNull(amostras.valorTerreno),
+	];
+	if (excludeId !== undefined) conditions.push(ne(amostras.id, excludeId));
+
 	return db
 		.select()
 		.from(amostras)
-		.where(
-			and(
-				ne(amostras.id, id),
-				isNotNull(amostras.coordenadaS),
-				isNotNull(amostras.coordenadaW),
-				isNotNull(amostras.valorImovel),
-				isNotNull(amostras.valorTerreno),
-			),
-		);
+		.where(and(...conditions));
 }
 
 export async function createAmostra(
