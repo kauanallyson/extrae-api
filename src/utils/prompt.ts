@@ -30,9 +30,9 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **dataReferencia:** data da AVALIAÇÃO DO IMÓVEL, formato DD/MM/AAAA. Ignorar datas de ART, vistoria, assinatura ou emissão.
 - **empresaResponsavel:** vá à seção "SIGNATÁRIOS", localize "Representante legal" associado ao Responsável Técnico, extraia o nome literal completo.
 - **numeroEtapas:** extraia de "Número de Parcelas Previstas" próximo ao cronograma.
-- **padraoAcabamento:** deve ser sempre coletado. Valores possíveis: 'Mínimo', 'Baixo', 'Normal (c/ aspectos de baixo)', 'Normal (forte predominância)', 'Normal (c/ aspectos de alto)', 'Alto (por predoninância)' ou 'Alto(superior, luxo)'.
+- **padraoAcabamento:** deve ser sempre coletado. Valores possíveis: 'Mínimo', 'Baixo', 'Normal (c/ aspectos de baixo)', 'Normal (forte predominância)', 'Normal (c/ aspectos de alto)', 'Alto (por predominância)' ou 'Alto (superior, luxo)'.
 - **regiaoContexto:** é o campo Região no contexto urbano.
-- **estadoConservacao:** é o campo Estado de Conservação.
+- **estadoConservacao:** é o campo Estado de Conservação. Valores possíveis: 'Em construção ou na planta', 'Bom (aparência de novo)', 'Bom (aparência de usado)', 'Regular (reparos simples)', 'Regular (reparos importantes)' ou 'Ruim'.
 - **idadeEstimada:** é o campo Idade Estimada.
 
 ## 5. FORMATAÇÃO

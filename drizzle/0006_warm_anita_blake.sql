@@ -1,0 +1,4 @@
+CREATE TYPE "public"."estado_conservacao" AS ENUM('Em construção ou na planta', 'Bom (aparência de novo)', 'Bom (aparência de usado)', 'Regular (reparos simples)', 'Regular (reparos importantes)', 'Ruim');--> statement-breakpoint
+CREATE TYPE "public"."padrao_acabamento" AS ENUM('Mínimo', 'Baixo', 'Normal (c/ aspectos de baixo)', 'Normal (forte predominância)', 'Normal (c/ aspectos de alto)', 'Alto (por predominância)', 'Alto (superior, luxo)');--> statement-breakpoint
+ALTER TABLE "amostras" ALTER COLUMN "padrao_acabamento" SET DATA TYPE "public"."padrao_acabamento" USING "padrao_acabamento"::"public"."padrao_acabamento";--> statement-breakpoint
+ALTER TABLE "amostras" ALTER COLUMN "estado_conservacao" SET DATA TYPE "public"."estado_conservacao" USING "estado_conservacao"::"public"."estado_conservacao";

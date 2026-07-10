@@ -18,12 +18,21 @@ import {
 	deleteById,
 	findAll,
 	findById,
+	findSimilaresCandidates,
 	updateAmostra as updateAmostraRepo,
 } from "@/repo/amostras.repo";
 import {
 	amostrasFilterSchema,
 	buildAmostrasFilters,
 } from "@/utils/amostras-filters";
+import {
+	type AmostraSimilar,
+	calcularScore,
+	distanciaKm,
+	type Estimativa,
+	estimarValores,
+	parseCoordenadaDms,
+} from "@/utils/amostras-similarity";
 import { mapDatabaseError } from "@/utils/db-errors";
 import { HttpError } from "@/utils/http-error";
 import { SYSTEM_PROMPT } from "@/utils/prompt";
@@ -55,6 +64,57 @@ export async function getAmostraById(id: number): Promise<SelectAmostra> {
 	const row = await findById(id);
 	if (!row) throw notFound(id);
 	return row;
+}
+
+export interface SimilaresResult {
+	amostra: SelectAmostra;
+	similares: Array<{
+		amostra: SelectAmostra;
+		score: number;
+		distanciaKm: number;
+	}>;
+	estimativa: Estimativa | null;
+}
+
+export async function findAmostrasSimilares(
+	id: number,
+	options: { raioKm: number; limit: number },
+): Promise<SimilaresResult> {
+	const alvo = await findById(id);
+	if (!alvo) throw notFound(id);
+
+	const alvoLat = parseCoordenadaDms(alvo.coordenadaS);
+	const alvoLon = parseCoordenadaDms(alvo.coordenadaW);
+	if (alvoLat === null || alvoLon === null) {
+		throw new HttpError(422, {
+			message: `Amostra ${id} nao possui coordenadas validas para calcular similares.`,
+		});
+	}
+
+	const candidatas = await findSimilaresCandidates(id);
+
+	const dentroDoRaio: AmostraSimilar[] = [];
+	for (const candidata of candidatas) {
+		const lat = parseCoordenadaDms(candidata.coordenadaS);
+		const lon = parseCoordenadaDms(candidata.coordenadaW);
+		if (lat === null || lon === null) continue;
+
+		const distKm = distanciaKm({ lat: alvoLat, lon: alvoLon }, { lat, lon });
+		if (distKm > options.raioKm) continue;
+
+		const score = calcularScore(alvo, candidata, distKm, options.raioKm);
+		dentroDoRaio.push({ amostra: candidata, score, distanciaKm: distKm });
+	}
+
+	const similares = dentroDoRaio
+		.sort((a, b) => b.score - a.score)
+		.slice(0, options.limit);
+
+	return {
+		amostra: alvo,
+		similares,
+		estimativa: similares.length > 0 ? estimarValores(similares) : null,
+	};
 }
 
 export async function createAmostra(

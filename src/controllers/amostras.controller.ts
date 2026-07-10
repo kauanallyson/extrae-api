@@ -1,5 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import multer from "multer";
+import { z } from "zod";
 import {
 	insertAmostraSchema,
 	updateAmostraSchema,
@@ -14,6 +15,11 @@ import { amostrasFilterSchema } from "@/utils/amostras-filters";
 import { HttpError } from "@/utils/http-error";
 import { idParamsSchema } from "@/utils/schemas";
 import { parse } from "@/utils/validate";
+
+const similaresQuerySchema = z.object({
+	raioKm: z.coerce.number().positive().default(5),
+	limit: z.coerce.number().int().positive().default(5),
+});
 
 const SPREADSHEET_CONTENT_TYPE =
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -56,6 +62,12 @@ amostrasRouter.get("/:id/rae", async (req: Request, res: Response) => {
 amostrasRouter.get("/", async (req: Request, res: Response) => {
 	const filter = parse(amostrasFilterSchema, req.query, "Query inválida");
 	res.json(await amostrasService.listAmostras(filter));
+});
+
+amostrasRouter.get("/:id/similares", async (req: Request, res: Response) => {
+	const { id } = parse(idParamsSchema, req.params, "ID inválido");
+	const options = parse(similaresQuerySchema, req.query, "Query inválida");
+	res.json(await amostrasService.findAmostrasSimilares(id, options));
 });
 
 amostrasRouter.get("/:id", async (req: Request, res: Response) => {

@@ -2,6 +2,7 @@ import {
 	char,
 	integer,
 	numeric,
+	pgEnum,
 	pgTable,
 	text,
 	timestamp,
@@ -10,6 +11,25 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { avaliadores } from "./avaliadores.model";
+
+export const padraoAcabamentoEnum = pgEnum("padrao_acabamento", [
+	"Mínimo",
+	"Baixo",
+	"Normal (c/ aspectos de baixo)",
+	"Normal (forte predominância)",
+	"Normal (c/ aspectos de alto)",
+	"Alto (por predominância)",
+	"Alto (superior, luxo)",
+]);
+
+export const estadoConservacaoEnum = pgEnum("estado_conservacao", [
+	"Em construção ou na planta",
+	"Bom (aparência de novo)",
+	"Bom (aparência de usado)",
+	"Regular (reparos simples)",
+	"Regular (reparos importantes)",
+	"Ruim",
+]);
 
 export const amostras = pgTable("amostras", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -52,8 +72,8 @@ export const amostras = pgTable("amostras", {
 	banheiros: integer(),
 	suites: integer(),
 	vagas: integer(),
-	padraoAcabamento: text(),
-	estadoConservacao: text(),
+	padraoAcabamento: padraoAcabamentoEnum(),
+	estadoConservacao: estadoConservacaoEnum(),
 	infraestrutura: text(),
 	servicosPublicos: text(),
 	usosPredominantes: text(),

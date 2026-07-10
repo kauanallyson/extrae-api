@@ -1,4 +1,4 @@
-import { desc, eq, type SQL } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne, type SQL } from "drizzle-orm";
 import { db } from "@/config/db";
 import {
 	amostras,
@@ -24,6 +24,23 @@ export async function findById(id: number): Promise<SelectAmostra | null> {
 
 	if (!row) return null;
 	return row;
+}
+
+export async function findSimilaresCandidates(
+	id: number,
+): Promise<SelectAmostra[]> {
+	return db
+		.select()
+		.from(amostras)
+		.where(
+			and(
+				ne(amostras.id, id),
+				isNotNull(amostras.coordenadaS),
+				isNotNull(amostras.coordenadaW),
+				isNotNull(amostras.valorImovel),
+				isNotNull(amostras.valorTerreno),
+			),
+		);
 }
 
 export async function createAmostra(
