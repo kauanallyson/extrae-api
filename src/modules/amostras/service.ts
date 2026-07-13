@@ -8,11 +8,13 @@ import { SYSTEM_PROMPT } from "@/config/prompt";
 import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
 import {
+	formatCnpj,
+	formatCpf,
 	normalizeCep,
 	sanitizeAsciiWord,
 	stripNonDigits,
 } from "@/utils/strings";
-import { cellValue, writeEntries } from "@/utils/xlsx";
+import { cellValue } from "@/utils/xlsx";
 import type { SelectAmostra } from "./model";
 import {
 	type AmostrasModel,
@@ -33,10 +35,17 @@ async function ensureAvaliadorExiste(avaliadorId: number): Promise<void> {
 }
 
 function normalizeContato<
-	T extends { cep?: string | null; telefone?: string | null },
+	T extends {
+		cpf?: string | null;
+		cnpj?: string | null;
+		cep?: string | null;
+		telefone?: string | null;
+	},
 >(data: T): T {
 	return {
 		...data,
+		cpf: formatCpf(data.cpf),
+		cnpj: formatCnpj(data.cnpj),
 		cep: normalizeCep(data.cep),
 		telefone: stripNonDigits(data.telefone),
 	} as T;
@@ -117,10 +126,6 @@ function comPercentuais(
 
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
 
-const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
-
-const VIRTUAL_FIELDS = ["avaliador"] as const;
-
 const FIELD_RESOLVERS: Record<
 	string,
 	(row: Record<string, unknown>) => unknown
@@ -133,15 +138,7 @@ const FIELD_RESOLVERS: Record<
 	},
 };
 
-const ALLOWED_FIELDS = [
-	...Object.keys(getTableColumns(amostras)).filter(
-		(field) => !META_FIELDS.has(field),
-	),
-	...VIRTUAL_FIELDS,
-];
-const ALLOWED_FIELDS_SET = new Set(ALLOWED_FIELDS);
-
-const DEFAULT_FIELDS = [
+const PLANILHA_FIELDS = [
 	"avaliador",
 	"proponente",
 	"telefone",
@@ -178,28 +175,6 @@ const RAE_EXCLUDED_FIELDS = new Set([
 	"createdAt",
 	"updatedAt",
 ]);
-
-function resolveFields(rawFields: string | undefined): string[] {
-	if (!rawFields) return [...DEFAULT_FIELDS];
-
-	const fields = rawFields
-		.split(",")
-		.map((field) => field.trim())
-		.filter((field) => field.length > 0);
-
-	const invalid = fields.filter((field) => !ALLOWED_FIELDS_SET.has(field));
-	if (invalid.length > 0) {
-		throw status(400, {
-			message: `Campos invalidos: ${invalid.join(", ")}`,
-			camposPermitidos: ALLOWED_FIELDS,
-		});
-	}
-	if (fields.length === 0) {
-		throw status(400, { message: "Nenhum campo informado." });
-	}
-
-	return fields;
-}
 
 export abstract class Amostras {
 	static async list(query: AmostrasModel["listQuery"]): Promise<{
@@ -432,14 +407,10 @@ export abstract class Amostras {
 		return normalizeContato(parsed);
 	}
 
-	static async generatePlanilha(
-		query: AmostrasModel["planilhaQuery"],
-	): Promise<{
+	static async generatePlanilha(): Promise<{
 		buffer: Buffer;
 		filename: string;
 	}> {
-		const fields = resolveFields(query.fields);
-
 		const rows = await db
 			.select({
 				...getTableColumns(amostras),
@@ -452,7 +423,7 @@ export abstract class Amostras {
 		const workbook = new ExcelJS.Workbook();
 		const sheet = workbook.addWorksheet("Amostras");
 
-		sheet.columns = fields.map((field) => ({
+		sheet.columns = PLANILHA_FIELDS.map((field) => ({
 			header: field,
 			key: field,
 			width: 25,
@@ -462,7 +433,7 @@ export abstract class Amostras {
 		for (const row of rows) {
 			const record = row as Record<string, unknown>;
 			sheet.addRow(
-				fields.map((field) => {
+				PLANILHA_FIELDS.map((field) => {
 					const resolver = FIELD_RESOLVERS[field];
 					return cellValue(resolver ? resolver(record) : record[field]);
 				}),
@@ -495,27 +466,33 @@ export abstract class Amostras {
 		]);
 		const arrays = percentuais.get(id);
 
+		const entries: [string, unknown][] = [
+			...(avaliador
+				? Object.entries(avaliador).filter(([key]) => key !== "id")
+				: []),
+			...Object.entries(amostra).filter(
+				([key]) => !RAE_EXCLUDED_FIELDS.has(key),
+			),
+			["incidencias", arrays?.incidencias ?? []],
+			["acumuladoProposto", arrays?.acumuladoProposto ?? []],
+		];
+
 		const workbook = new ExcelJS.Workbook();
 		const sheet = workbook.addWorksheet("Dados RAE");
 
-		sheet.columns = [
-			{ header: "Campo", key: "field", width: 25 },
-			{ header: "Valor", key: "value", width: 50 },
-		];
+		sheet.columns = entries.map(([key]) => ({
+			header: key,
+			key,
+			width: 25,
+		}));
 		sheet.getRow(1).font = { bold: true, size: 12 };
 
-		if (avaliador) {
-			writeEntries(sheet, Object.entries(avaliador), new Set(["id"]));
-		}
-		writeEntries(
-			sheet,
-			[
-				...Object.entries(amostra),
-				["incidencias", arrays?.incidencias ?? []],
-				["acumuladoProposto", arrays?.acumuladoProposto ?? []],
-			],
-			RAE_EXCLUDED_FIELDS,
-		);
+		entries.forEach(([, value], index) => {
+			const values = Array.isArray(value) ? value : [value];
+			values.forEach((item, offset) => {
+				sheet.getRow(2 + offset).getCell(index + 1).value = cellValue(item);
+			});
+		});
 
 		const buffer = await workbook.xlsx.writeBuffer();
 

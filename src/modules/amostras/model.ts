@@ -38,10 +38,6 @@ export const estadoConservacaoEnum = pgEnum("estado_conservacao", [
 	"Ruim",
 ]);
 
-// Convenção monetária/decimal: inteiros com 2 casas implícitas.
-// Dinheiro em centavos (R$ 1.234,56 -> 123456), áreas/testada em
-// centésimos (250,50 m² -> 25050), percentuais em centésimos de %
-// (12,34% -> 1234).
 export const amostras = pgTable("amostras", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	avaliadorId: integer()
@@ -118,8 +114,6 @@ export const acumuladosPropostos = pgTable(
 	(table) => [unique().on(table.amostraId, table.ordem)],
 );
 
-// Intermediate variables avoid "type instantiation is possibly infinite"
-// when nesting drizzle-typebox output inside Elysia schemas.
 const insertSchema = createInsertSchema(amostras, {
 	cpf: t.Nullable(t.String({ pattern: CPF_REGEX })),
 	cnpj: t.Nullable(t.String({ pattern: CNPJ_REGEX })),
@@ -127,6 +121,12 @@ const insertSchema = createInsertSchema(amostras, {
 	telefone: t.Nullable(t.String({ pattern: TELEFONE_REGEX })),
 });
 const selectSchema = createSelectSchema(amostras);
+const extractedInsertSchema = createInsertSchema(amostras, {
+	cpf: t.Nullable(t.String()),
+	cnpj: t.Nullable(t.String()),
+	cep: t.Nullable(t.String()),
+	telefone: t.Nullable(t.String()),
+});
 
 const percentuais = t.Array(t.Integer());
 const incidencias20 = t.Array(t.Integer(), {
@@ -167,17 +167,16 @@ export const AmostrasModel = {
 		cursor: t.Optional(t.Integer({ minimum: 1 })),
 		limit: t.Integer({ minimum: 1, maximum: 100, default: 20 }),
 	}),
-	planilhaQuery: t.Object({ fields: t.Optional(t.String()) }),
 	pdf: t.Object({
 		pdf: t.File({
 			maxSize: 10 * 1024 * 1024,
 			error: "PDF deve ter no máximo 10MB",
 		}),
 	}),
-	// Sem restrição de tamanho nos arrays: o structured output estrito da
-	// OpenAI não aceita minItems/maxItems; o tamanho é garantido pelo prompt.
 	extracted: t.Composite([
-		t.Required(t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"])),
+		t.Required(
+			t.Omit(extractedInsertSchema, ["avaliadorId", "createdAt", "updatedAt"]),
+		),
 		t.Object({
 			incidencias: t.Nullable(percentuais),
 			acumuladoProposto: t.Nullable(percentuais),

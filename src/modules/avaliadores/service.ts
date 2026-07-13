@@ -1,6 +1,7 @@
 import { and, eq, ne, or, type SQL } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
+import { formatCnpj, formatCpf } from "@/utils/strings";
 import {
 	type AvaliadoresModel,
 	type AvaliadorSelect,
@@ -9,6 +10,16 @@ import {
 
 function notFound(id: number): never {
 	throw status(404, { message: `Avaliador ${id} nao encontrado.` });
+}
+
+function normalizeDocumentos<T extends { cpf?: string; cnpj?: string }>(
+	data: T,
+): T {
+	return {
+		...data,
+		cpf: formatCpf(data.cpf),
+		cnpj: formatCnpj(data.cnpj),
+	} as T;
 }
 
 export abstract class Avaliadores {
@@ -39,9 +50,10 @@ export abstract class Avaliadores {
 	static async create(
 		data: AvaliadoresModel["insert"],
 	): Promise<AvaliadorSelect> {
-		await Avaliadores.ensureCpfCnpjDisponiveis(data);
+		const values = normalizeDocumentos(data);
+		await Avaliadores.ensureCpfCnpjDisponiveis(values);
 
-		const [row] = await db.insert(avaliadores).values(data).returning();
+		const [row] = await db.insert(avaliadores).values(values).returning();
 		if (!row) {
 			throw status(500, { message: "Ocorreu um erro ao salvar o avaliador." });
 		}
@@ -52,11 +64,12 @@ export abstract class Avaliadores {
 		id: number,
 		data: AvaliadoresModel["update"],
 	): Promise<AvaliadorSelect> {
-		await Avaliadores.ensureCpfCnpjDisponiveis(data, id);
+		const values = normalizeDocumentos(data);
+		await Avaliadores.ensureCpfCnpjDisponiveis(values, id);
 
 		const [row] = await db
 			.update(avaliadores)
-			.set(data)
+			.set(values)
 			.where(eq(avaliadores.id, id))
 			.returning();
 

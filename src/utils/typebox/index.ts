@@ -4,6 +4,37 @@ export const idParamsSchema = t.Object({
 	id: t.Integer(),
 });
 
+export function firstIssueMessage(error: unknown): string {
+	const all = (
+		error as {
+			all?: Array<{
+				path?: unknown;
+				message?: string;
+				schema?: { error?: unknown };
+			}>;
+		}
+	).all;
+	const issue = all?.[0];
+	if (!issue?.message) return "Dados inválidos";
+
+	const schemaError = issue.schema?.error;
+	if (typeof schemaError === "string") return schemaError;
+
+	const path = Array.isArray(issue.path)
+		? issue.path
+				.map((segment: unknown) =>
+					typeof segment === "object" && segment !== null && "key" in segment
+						? (segment as { key: unknown }).key
+						: segment,
+				)
+				.join(".")
+		: typeof issue.path === "string"
+			? issue.path.replace(/^\//, "").replaceAll("/", ".")
+			: "";
+
+	return path && path !== "root" ? `${path}: ${issue.message}` : issue.message;
+}
+
 /**
  * @lastModified 2025-02-04
  * @see https://elysiajs.com/recipe/drizzle.html#utility
@@ -35,9 +66,6 @@ type Spread<
 			: // biome-ignore lint/complexity/noBannedTypes: verbatim from the Elysia drizzle integration guide
 				{};
 
-/**
- * Spread a Drizzle schema into a plain object
- */
 export const spread = <
 	T extends TObject | Table,
 	Mode extends "select" | "insert" | undefined,
@@ -75,13 +103,6 @@ export const spread = <
 	return newSchema as any;
 };
 
-/**
- * Spread a Drizzle Table into a plain object
- *
- * If `mode` is 'insert', the schema will be refined for insert
- * If `mode` is 'select', the schema will be refined for select
- * If `mode` is undefined, the schema will be spread as is, models will need to be refined manually
- */
 export const spreads = <
 	T extends Record<string, TObject | Table>,
 	Mode extends "select" | "insert" | undefined,

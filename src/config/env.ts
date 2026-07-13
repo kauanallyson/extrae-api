@@ -3,7 +3,7 @@ import { t } from "elysia";
 
 const envSchema = t.Object({
 	PORT: t.Integer({ minimum: 1, maximum: 65535 }),
-	DATABASE_URL: t.String({ minLength: 1 }),
+	DATABASE_URL: t.String({ minLength: 1, pattern: "^postgres(ql)?://" }),
 	OPENAI_API_KEY: t.String({ minLength: 1 }),
 });
 

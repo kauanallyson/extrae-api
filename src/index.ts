@@ -4,37 +4,7 @@ import { Elysia } from "elysia";
 import { env } from "@/config/env";
 import { amostras } from "@/modules/amostras";
 import { avaliadores } from "@/modules/avaliadores";
-
-function firstIssueMessage(error: unknown): string {
-	const all = (
-		error as {
-			all?: Array<{
-				path?: unknown;
-				message?: string;
-				schema?: { error?: unknown };
-			}>;
-		}
-	).all;
-	const issue = all?.[0];
-	if (!issue?.message) return "Dados inválidos";
-
-	const schemaError = issue.schema?.error;
-	if (typeof schemaError === "string") return schemaError;
-
-	const path = Array.isArray(issue.path)
-		? issue.path
-				.map((segment: unknown) =>
-					typeof segment === "object" && segment !== null && "key" in segment
-						? (segment as { key: unknown }).key
-						: segment,
-				)
-				.join(".")
-		: typeof issue.path === "string"
-			? issue.path.replace(/^\//, "").replaceAll("/", ".")
-			: "";
-
-	return path && path !== "root" ? `${path}: ${issue.message}` : issue.message;
-}
+import { firstIssueMessage } from "@/utils/typebox";
 
 export const app = new Elysia()
 	.use(
@@ -62,7 +32,6 @@ export const app = new Elysia()
 			set.status = 500;
 			return { message: "Erro interno do servidor" };
 		}
-		// thrown status(...) responses fall through to Elysia's default handling
 	})
 	.get("/health", () => ({ status: "ok" }))
 	.use(amostras)

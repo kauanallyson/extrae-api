@@ -11,6 +11,8 @@ COPY ./drizzle ./drizzle
 
 ENV NODE_ENV=production
 
+USER bun
+
 EXPOSE 3000
 
 CMD ["sh", "-c", "bunx drizzle-kit migrate && bun run src/index.ts"]
