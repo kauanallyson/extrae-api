@@ -1,17 +1,23 @@
 import {
+	bigint,
 	char,
 	integer,
-	numeric,
 	pgEnum,
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 import { avaliadores } from "@/modules/avaliadores/model";
-import { CEP_PATTERN, TELEFONE_PATTERN } from "@/utils/schemas";
+import {
+	CEP_REGEX,
+	CNPJ_REGEX,
+	CPF_REGEX,
+	TELEFONE_REGEX,
+} from "@/utils/regex";
 
 export const padraoAcabamentoEnum = pgEnum("padrao_acabamento", [
 	"Mínimo",
@@ -32,6 +38,10 @@ export const estadoConservacaoEnum = pgEnum("estado_conservacao", [
 	"Ruim",
 ]);
 
+// Convenção monetária/decimal: inteiros com 2 casas implícitas.
+// Dinheiro em centavos (R$ 1.234,56 -> 123456), áreas/testada em
+// centésimos (250,50 m² -> 25050), percentuais em centésimos de %
+// (12,34% -> 1234).
 export const amostras = pgTable("amostras", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	avaliadorId: integer()
@@ -51,24 +61,18 @@ export const amostras = pgTable("amostras", {
 	municipio: text(),
 	uf: char({ length: 2 }),
 	empresaResponsavel: text(),
-	valorTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
+	valorTerreno: bigint({ mode: "number" }),
 	matricula: text(),
 	oficio: text(),
 	comarca: text(),
 	ufMatricula: char({ length: 2 }),
-	valorImovel: numeric({ precision: 14, scale: 2, mode: "number" }),
-	incidencias: numeric({ precision: 14, scale: 2, mode: "number" }).array(),
-	acumuladoProposto: numeric({
-		precision: 14,
-		scale: 2,
-		mode: "number",
-	}).array(),
+	valorImovel: bigint({ mode: "number" }),
 	numeroEtapas: integer(),
-	valorUnitario: numeric({ precision: 14, scale: 2, mode: "number" }),
-	testada: numeric({ precision: 14, scale: 2, mode: "number" }),
+	valorUnitario: bigint({ mode: "number" }),
+	testada: integer(),
 	idadeEstimada: text(),
-	areaTerreno: numeric({ precision: 14, scale: 2, mode: "number" }),
-	areaConstruida: numeric({ precision: 14, scale: 2, mode: "number" }),
+	areaTerreno: integer(),
+	areaConstruida: integer(),
 	quartos: integer(),
 	banheiros: integer(),
 	suites: integer(),
@@ -88,24 +92,77 @@ export const amostras = pgTable("amostras", {
 		.notNull(),
 });
 
+export const incidencias = pgTable(
+	"incidencias",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		amostraId: integer()
+			.references(() => amostras.id, { onDelete: "cascade" })
+			.notNull(),
+		ordem: integer().notNull(),
+		percentual: integer().notNull(),
+	},
+	(table) => [unique().on(table.amostraId, table.ordem)],
+);
+
+export const acumuladosPropostos = pgTable(
+	"acumulados_propostos",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		amostraId: integer()
+			.references(() => amostras.id, { onDelete: "cascade" })
+			.notNull(),
+		ordem: integer().notNull(),
+		percentual: integer().notNull(),
+	},
+	(table) => [unique().on(table.amostraId, table.ordem)],
+);
+
 // Intermediate variables avoid "type instantiation is possibly infinite"
 // when nesting drizzle-typebox output inside Elysia schemas.
 const insertSchema = createInsertSchema(amostras, {
-	cep: t.Nullable(t.String({ pattern: CEP_PATTERN })),
-	telefone: t.Nullable(t.String({ pattern: TELEFONE_PATTERN })),
+	cpf: t.Nullable(t.String({ pattern: CPF_REGEX })),
+	cnpj: t.Nullable(t.String({ pattern: CNPJ_REGEX })),
+	cep: t.Nullable(t.String({ pattern: CEP_REGEX })),
+	telefone: t.Nullable(t.String({ pattern: TELEFONE_REGEX })),
 });
 const selectSchema = createSelectSchema(amostras);
 
+const percentuais = t.Array(t.Integer());
+const incidencias20 = t.Array(t.Integer(), {
+	minItems: 20,
+	maxItems: 20,
+});
+
+const percentuaisInsert = t.Object({
+	incidencias: t.Optional(
+		t.Union([incidencias20, t.Null()], {
+			error: "incidencias deve conter exatamente 20 valores",
+		}),
+	),
+	acumuladoProposto: t.Optional(t.Nullable(percentuais)),
+});
+
 export const AmostrasModel = {
-	select: selectSchema,
+	select: t.Composite([
+		selectSchema,
+		t.Object({ incidencias: percentuais, acumuladoProposto: percentuais }),
+	]),
 	insert: t.Composite([
 		t.Partial(t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"])),
 		t.Pick(insertSchema, ["avaliadorId"]),
+		percentuaisInsert,
 	]),
-	update: t.Partial(t.Omit(insertSchema, ["createdAt", "updatedAt"]), {
-		minProperties: 1,
-		error: "Informe ao menos um campo para atualizar.",
-	}),
+	update: t.Composite(
+		[
+			t.Partial(t.Omit(insertSchema, ["createdAt", "updatedAt"])),
+			percentuaisInsert,
+		],
+		{
+			minProperties: 1,
+			error: "Informe ao menos um campo para atualizar.",
+		},
+	),
 	listQuery: t.Object({
 		cursor: t.Optional(t.Integer({ minimum: 1 })),
 		limit: t.Integer({ minimum: 1, maximum: 100, default: 20 }),
@@ -117,9 +174,15 @@ export const AmostrasModel = {
 			error: "PDF deve ter no máximo 10MB",
 		}),
 	}),
-	extracted: t.Required(
-		t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"]),
-	),
+	// Sem restrição de tamanho nos arrays: o structured output estrito da
+	// OpenAI não aceita minItems/maxItems; o tamanho é garantido pelo prompt.
+	extracted: t.Composite([
+		t.Required(t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"])),
+		t.Object({
+			incidencias: t.Nullable(percentuais),
+			acumuladoProposto: t.Nullable(percentuais),
+		}),
+	]),
 } as const;
 
 export type SelectAmostra = typeof amostras.$inferSelect;

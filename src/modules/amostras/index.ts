@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { idParamsSchema } from "@/utils/schemas";
+import { idParamsSchema } from "@/utils/typebox";
 import { SPREADSHEET_CONTENT_TYPE } from "@/utils/xlsx";
 import { AmostrasModel } from "./model";
 import { Amostras } from "./service";

@@ -50,6 +50,13 @@
       "when": 1783686122218,
       "tag": "0006_warm_anita_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783983094123,
+      "tag": "0007_friendly_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

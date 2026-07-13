@@ -1,7 +1,7 @@
 import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-typebox";
 import { t } from "elysia";
-import { CNPJ_PATTERN, CPF_PATTERN } from "@/utils/schemas";
+import { CNPJ_REGEX, CPF_REGEX } from "@/utils/regex";
 
 export const avaliadores = pgTable("avaliadores", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -13,8 +13,8 @@ export const avaliadores = pgTable("avaliadores", {
 });
 
 const insertSchema = createInsertSchema(avaliadores, {
-	cpf: t.String({ pattern: CPF_PATTERN }),
-	cnpj: t.String({ pattern: CNPJ_PATTERN }),
+	cpf: t.String({ pattern: CPF_REGEX }),
+	cnpj: t.String({ pattern: CNPJ_REGEX }),
 });
 
 export const AvaliadoresModel = {

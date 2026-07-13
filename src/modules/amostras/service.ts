@@ -1,9 +1,10 @@
 import { Value } from "@sinclair/typebox/value";
-import { desc, eq, getTableColumns, lt } from "drizzle-orm";
+import { asc, desc, eq, getTableColumns, inArray, lt } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
+import { SYSTEM_PROMPT } from "@/config/prompt";
 import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
 import {
@@ -13,8 +14,13 @@ import {
 } from "@/utils/strings";
 import { cellValue, writeEntries } from "@/utils/xlsx";
 import type { SelectAmostra } from "./model";
-import { type AmostrasModel, amostras, AmostrasModel as Model } from "./model";
-import { SYSTEM_PROMPT } from "./prompt";
+import {
+	type AmostrasModel,
+	acumuladosPropostos,
+	amostras,
+	incidencias,
+	AmostrasModel as Model,
+} from "./model";
 
 function notFound(id: number): never {
 	throw status(404, { message: `Amostra ${id} nao encontrada.` });
@@ -36,6 +42,79 @@ function normalizeContato<
 	} as T;
 }
 
+interface Percentuais {
+	incidencias: number[];
+	acumuladoProposto: number[];
+}
+
+function splitPercentuais<
+	T extends {
+		incidencias?: number[] | null;
+		acumuladoProposto?: number[] | null;
+	},
+>(
+	data: T,
+): {
+	scalars: Omit<T, "incidencias" | "acumuladoProposto">;
+	incidencias: number[] | null | undefined;
+	acumuladoProposto: number[] | null | undefined;
+} {
+	const {
+		incidencias: incidenciasValues,
+		acumuladoProposto: acumuladoValues,
+		...scalars
+	} = data;
+	return {
+		scalars,
+		incidencias: incidenciasValues,
+		acumuladoProposto: acumuladoValues,
+	};
+}
+
+async function carregarPercentuais(
+	ids: number[],
+): Promise<Map<number, Percentuais>> {
+	const porAmostra = new Map<number, Percentuais>(
+		ids.map((id) => [id, { incidencias: [], acumuladoProposto: [] }]),
+	);
+	if (ids.length === 0) return porAmostra;
+
+	const [incidenciasRows, acumuladoRows] = await Promise.all([
+		db
+			.select()
+			.from(incidencias)
+			.where(inArray(incidencias.amostraId, ids))
+			.orderBy(asc(incidencias.amostraId), asc(incidencias.ordem)),
+		db
+			.select()
+			.from(acumuladosPropostos)
+			.where(inArray(acumuladosPropostos.amostraId, ids))
+			.orderBy(
+				asc(acumuladosPropostos.amostraId),
+				asc(acumuladosPropostos.ordem),
+			),
+	]);
+
+	for (const row of incidenciasRows) {
+		porAmostra.get(row.amostraId)?.incidencias.push(row.percentual);
+	}
+	for (const row of acumuladoRows) {
+		porAmostra.get(row.amostraId)?.acumuladoProposto.push(row.percentual);
+	}
+	return porAmostra;
+}
+
+function comPercentuais(
+	amostra: SelectAmostra,
+	percentuais: Percentuais | undefined,
+): AmostrasModel["select"] {
+	return {
+		...amostra,
+		incidencias: percentuais?.incidencias ?? [],
+		acumuladoProposto: percentuais?.acumuladoProposto ?? [],
+	};
+}
+
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
 
 const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
@@ -55,7 +134,7 @@ const FIELD_RESOLVERS: Record<
 };
 
 const ALLOWED_FIELDS = [
-	...Object.keys(Model.select.properties).filter(
+	...Object.keys(getTableColumns(amostras)).filter(
 		(field) => !META_FIELDS.has(field),
 	),
 	...VIRTUAL_FIELDS,
@@ -124,7 +203,7 @@ function resolveFields(rawFields: string | undefined): string[] {
 
 export abstract class Amostras {
 	static async list(query: AmostrasModel["listQuery"]): Promise<{
-		data: SelectAmostra[];
+		data: AmostrasModel["select"][];
 		nextCursor: number | null;
 	}> {
 		const rows = await db
@@ -136,14 +215,18 @@ export abstract class Amostras {
 			.orderBy(desc(amostras.id))
 			.limit(query.limit + 1);
 
-		const data = rows.slice(0, query.limit);
+		const page = rows.slice(0, query.limit);
 		const nextCursor =
-			rows.length > query.limit ? (data.at(-1)?.id ?? null) : null;
+			rows.length > query.limit ? (page.at(-1)?.id ?? null) : null;
 
-		return { data, nextCursor };
+		const percentuais = await carregarPercentuais(page.map((row) => row.id));
+		return {
+			data: page.map((row) => comPercentuais(row, percentuais.get(row.id))),
+			nextCursor,
+		};
 	}
 
-	static async getById(id: number): Promise<SelectAmostra> {
+	static async getById(id: number): Promise<AmostrasModel["select"]> {
 		const [row] = await db
 			.select()
 			.from(amostras)
@@ -151,48 +234,135 @@ export abstract class Amostras {
 			.limit(1);
 
 		if (!row) notFound(id);
-		return row;
+
+		const percentuais = await carregarPercentuais([id]);
+		return comPercentuais(row, percentuais.get(id));
 	}
 
-	static async create(data: AmostrasModel["insert"]): Promise<SelectAmostra> {
+	static async create(
+		data: AmostrasModel["insert"],
+	): Promise<AmostrasModel["select"]> {
 		await ensureAvaliadorExiste(data.avaliadorId);
 
-		const [row] = await db
-			.insert(amostras)
-			.values(normalizeContato(data))
-			.returning();
-		if (!row) {
-			throw status(500, { message: "Ocorreu um erro ao salvar a amostra." });
-		}
-		return row;
+		const {
+			scalars,
+			incidencias: incidenciasValues,
+			acumuladoProposto: acumuladoValues,
+		} = splitPercentuais(data);
+
+		const row = await db.transaction(async (tx) => {
+			const [created] = await tx
+				.insert(amostras)
+				.values(normalizeContato(scalars))
+				.returning();
+			if (!created) {
+				throw status(500, { message: "Ocorreu um erro ao salvar a amostra." });
+			}
+
+			if (incidenciasValues?.length) {
+				await tx.insert(incidencias).values(
+					incidenciasValues.map((percentual, index) => ({
+						amostraId: created.id,
+						ordem: index + 1,
+						percentual,
+					})),
+				);
+			}
+			if (acumuladoValues?.length) {
+				await tx.insert(acumuladosPropostos).values(
+					acumuladoValues.map((percentual, index) => ({
+						amostraId: created.id,
+						ordem: index + 1,
+						percentual,
+					})),
+				);
+			}
+
+			return created;
+		});
+
+		return {
+			...row,
+			incidencias: incidenciasValues ?? [],
+			acumuladoProposto: acumuladoValues ?? [],
+		};
 	}
 
 	static async update(
 		id: number,
 		data: AmostrasModel["update"],
-	): Promise<SelectAmostra> {
+	): Promise<AmostrasModel["select"]> {
 		if (data.avaliadorId !== undefined) {
 			await ensureAvaliadorExiste(data.avaliadorId);
 		}
 
-		const [row] = await db
-			.update(amostras)
-			.set(normalizeContato(data))
-			.where(eq(amostras.id, id))
-			.returning();
+		const {
+			scalars,
+			incidencias: incidenciasValues,
+			acumuladoProposto: acumuladoValues,
+		} = splitPercentuais(data);
 
-		if (!row) notFound(id);
-		return row;
+		const row = await db.transaction(async (tx) => {
+			let updated: SelectAmostra | undefined;
+			if (Object.keys(scalars).length > 0) {
+				[updated] = await tx
+					.update(amostras)
+					.set(normalizeContato(scalars))
+					.where(eq(amostras.id, id))
+					.returning();
+			} else {
+				[updated] = await tx
+					.select()
+					.from(amostras)
+					.where(eq(amostras.id, id))
+					.limit(1);
+			}
+			if (!updated) notFound(id);
+
+			if (incidenciasValues !== undefined) {
+				await tx.delete(incidencias).where(eq(incidencias.amostraId, id));
+				if (incidenciasValues?.length) {
+					await tx.insert(incidencias).values(
+						incidenciasValues.map((percentual, index) => ({
+							amostraId: id,
+							ordem: index + 1,
+							percentual,
+						})),
+					);
+				}
+			}
+			if (acumuladoValues !== undefined) {
+				await tx
+					.delete(acumuladosPropostos)
+					.where(eq(acumuladosPropostos.amostraId, id));
+				if (acumuladoValues?.length) {
+					await tx.insert(acumuladosPropostos).values(
+						acumuladoValues.map((percentual, index) => ({
+							amostraId: id,
+							ordem: index + 1,
+							percentual,
+						})),
+					);
+				}
+			}
+
+			return updated;
+		});
+
+		const percentuais = await carregarPercentuais([id]);
+		return comPercentuais(row, percentuais.get(id));
 	}
 
-	static async remove(id: number): Promise<SelectAmostra> {
+	static async remove(id: number): Promise<AmostrasModel["select"]> {
+		const percentuais = await carregarPercentuais([id]);
+
 		const [row] = await db
 			.delete(amostras)
 			.where(eq(amostras.id, id))
 			.returning();
 
 		if (!row) notFound(id);
-		return row;
+		return comPercentuais(row, percentuais.get(id));
 	}
 
 	static async extractFromPdf(file: File): Promise<AmostrasModel["extracted"]> {
@@ -316,10 +486,14 @@ export abstract class Amostras {
 			throw status(404, { message: `Amostra com id: ${id} não encontrada` });
 		}
 
-		const [avaliador] = await db
-			.select()
-			.from(avaliadores)
-			.where(eq(avaliadores.id, amostra.avaliadorId));
+		const [percentuais, [avaliador]] = await Promise.all([
+			carregarPercentuais([id]),
+			db
+				.select()
+				.from(avaliadores)
+				.where(eq(avaliadores.id, amostra.avaliadorId)),
+		]);
+		const arrays = percentuais.get(id);
 
 		const workbook = new ExcelJS.Workbook();
 		const sheet = workbook.addWorksheet("Dados RAE");
@@ -333,7 +507,15 @@ export abstract class Amostras {
 		if (avaliador) {
 			writeEntries(sheet, Object.entries(avaliador), new Set(["id"]));
 		}
-		writeEntries(sheet, Object.entries(amostra), RAE_EXCLUDED_FIELDS);
+		writeEntries(
+			sheet,
+			[
+				...Object.entries(amostra),
+				["incidencias", arrays?.incidencias ?? []],
+				["acumuladoProposto", arrays?.acumuladoProposto ?? []],
+			],
+			RAE_EXCLUDED_FIELDS,
+		);
 
 		const buffer = await workbook.xlsx.writeBuffer();
 

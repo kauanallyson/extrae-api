@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { idParamsSchema } from "@/utils/schemas";
+import { idParamsSchema } from "@/utils/typebox";
 import { AvaliadoresModel } from "./model";
 import { Avaliadores } from "./service";
 
