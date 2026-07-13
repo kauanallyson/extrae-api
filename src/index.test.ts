@@ -18,6 +18,15 @@ describe("app", () => {
 		expect(await response.json()).toHaveProperty("message");
 	});
 
+	test("GET /amostras rejects invalid pagination limit with 400", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/amostras?limit=0"),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toHaveProperty("message");
+	});
+
 	test("unknown route returns 404 json", async () => {
 		const response = await app.handle(new Request("http://localhost/nope"));
 

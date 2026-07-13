@@ -30,7 +30,9 @@ export const amostras = new Elysia({ prefix: "/amostras" })
 		},
 		{ params: idParamsSchema },
 	)
-	.get("/", () => Amostras.list())
+	.get("/", ({ query }) => Amostras.list(query), {
+		query: AmostrasModel.listQuery,
+	})
 	.get("/:id", ({ params: { id } }) => Amostras.getById(id), {
 		params: idParamsSchema,
 	})

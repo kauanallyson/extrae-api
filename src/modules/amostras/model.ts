@@ -106,6 +106,10 @@ export const AmostrasModel = {
 		minProperties: 1,
 		error: "Informe ao menos um campo para atualizar.",
 	}),
+	listQuery: t.Object({
+		cursor: t.Optional(t.Integer({ minimum: 1 })),
+		limit: t.Integer({ minimum: 1, maximum: 100, default: 20 }),
+	}),
 	planilhaQuery: t.Object({ fields: t.Optional(t.String()) }),
 	pdf: t.Object({
 		pdf: t.File({

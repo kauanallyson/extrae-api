@@ -1,5 +1,5 @@
 import { Value } from "@sinclair/typebox/value";
-import { desc, eq, getTableColumns } from "drizzle-orm";
+import { desc, eq, getTableColumns, lt } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
 import { db } from "@/config/db";
@@ -123,8 +123,24 @@ function resolveFields(rawFields: string | undefined): string[] {
 }
 
 export abstract class Amostras {
-	static async list(): Promise<SelectAmostra[]> {
-		return db.select().from(amostras).orderBy(desc(amostras.createdAt));
+	static async list(query: AmostrasModel["listQuery"]): Promise<{
+		data: SelectAmostra[];
+		nextCursor: number | null;
+	}> {
+		const rows = await db
+			.select()
+			.from(amostras)
+			.where(
+				query.cursor !== undefined ? lt(amostras.id, query.cursor) : undefined,
+			)
+			.orderBy(desc(amostras.id))
+			.limit(query.limit + 1);
+
+		const data = rows.slice(0, query.limit);
+		const nextCursor =
+			rows.length > query.limit ? (data.at(-1)?.id ?? null) : null;
+
+		return { data, nextCursor };
 	}
 
 	static async getById(id: number): Promise<SelectAmostra> {
