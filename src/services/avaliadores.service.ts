@@ -27,9 +27,7 @@ export async function listAvaliadores(): Promise<AvaliadorSelect[]> {
 	return findAll();
 }
 
-export async function getAvaliadorById(
-	id: number,
-): Promise<AvaliadorSelect> {
+export async function getAvaliadorById(id: number): Promise<AvaliadorSelect> {
 	const avaliador = await findById(id);
 	if (!avaliador) throw notFound(id);
 	return avaliador;

@@ -10,7 +10,11 @@ export function parse<T>(
 	if (!result.success) {
 		const issue = result.error.issues[0];
 		const path = issue?.path.join(".");
-		const detail = issue ? (path ? `${path}: ${issue.message}` : issue.message) : message;
+		const detail = issue
+			? path
+				? `${path}: ${issue.message}`
+				: issue.message
+			: message;
 		throw new HttpError(400, {
 			message: detail,
 		});
