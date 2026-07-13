@@ -1,3 +1,4 @@
+import { Value } from "@sinclair/typebox/value";
 import {
 	and,
 	desc,
@@ -9,20 +10,13 @@ import {
 } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
-import { zodResponseFormat } from "openai/helpers/zod";
-import type { z } from "zod";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
 import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
 import { buildAmostrasFilters } from "./filters";
-import {
-	type AmostrasModel,
-	amostras,
-	insertAmostraSchema,
-	type SelectAmostra,
-	selectAmostraSchema,
-} from "./model";
+import type { SelectAmostra } from "./model";
+import { type AmostrasModel, amostras, AmostrasModel as Model } from "./model";
 import { SYSTEM_PROMPT } from "./prompt";
 import {
 	type AmostraSimilar,
@@ -55,9 +49,28 @@ export interface SimilaresPorCriteriosResult {
 	estimativa: Estimativa | null;
 }
 
-const aiSchema = insertAmostraSchema.omit({ avaliadorId: true }).required();
-
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
+
+const stripNonDigits = (value: string | null | undefined): typeof value =>
+	typeof value === "string" ? value.replace(/\D/g, "") : value;
+
+const normalizeCep = (value: string | null | undefined): typeof value => {
+	if (typeof value !== "string") return value;
+	const digits = value.replace(/\D/g, "");
+	return digits.length === 8
+		? `${digits.slice(0, 5)}-${digits.slice(5)}`
+		: value;
+};
+
+function normalizeContato<
+	T extends { cep?: string | null; telefone?: string | null },
+>(data: T): T {
+	return {
+		...data,
+		cep: normalizeCep(data.cep),
+		telefone: stripNonDigits(data.telefone),
+	} as T;
+}
 
 const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
 
@@ -76,7 +89,7 @@ const FIELD_RESOLVERS: Record<
 };
 
 const ALLOWED_FIELDS = [
-	...Object.keys(selectAmostraSchema.shape).filter(
+	...Object.keys(Model.select.properties).filter(
 		(field) => !META_FIELDS.has(field),
 	),
 	...VIRTUAL_FIELDS,
@@ -265,7 +278,15 @@ export abstract class Amostras {
 		options: AmostrasModel["similaresQuery"],
 	): Promise<SimilaresPorCriteriosResult> {
 		return calcularSimilares(
-			alvo,
+			{
+				coordenadaS: alvo.coordenadaS,
+				coordenadaW: alvo.coordenadaW,
+				areaTerreno: alvo.areaTerreno ?? null,
+				areaConstruida: alvo.areaConstruida ?? null,
+				padraoAcabamento: alvo.padraoAcabamento ?? null,
+				estadoConservacao: alvo.estadoConservacao ?? null,
+				dataReferencia: alvo.dataReferencia ?? null,
+			},
 			options,
 			"Coordenadas informadas nao sao validas para calcular similares.",
 		);
@@ -274,7 +295,10 @@ export abstract class Amostras {
 	static async create(data: AmostrasModel["insert"]): Promise<SelectAmostra> {
 		await ensureAvaliadorExiste(data.avaliadorId);
 
-		const [row] = await db.insert(amostras).values(data).returning();
+		const [row] = await db
+			.insert(amostras)
+			.values(normalizeContato(data))
+			.returning();
 		if (!row) {
 			throw status(500, { message: "Ocorreu um erro ao salvar a amostra." });
 		}
@@ -291,7 +315,7 @@ export abstract class Amostras {
 
 		const [row] = await db
 			.update(amostras)
-			.set(data)
+			.set(normalizeContato(data))
 			.where(eq(amostras.id, id))
 			.returning();
 
@@ -309,7 +333,7 @@ export abstract class Amostras {
 		return row;
 	}
 
-	static async extractFromPdf(file: File): Promise<z.infer<typeof aiSchema>> {
+	static async extractFromPdf(file: File): Promise<AmostrasModel["extracted"]> {
 		if (file.type !== "application/pdf") {
 			throw status(400, { message: "O arquivo deve ser um pdf" });
 		}
@@ -321,7 +345,7 @@ export abstract class Amostras {
 
 		const base64 = buffer.toString("base64");
 
-		const response = await openai.chat.completions.parse({
+		const response = await openai.chat.completions.create({
 			model: "gpt-4o",
 			temperature: 0,
 			messages: [
@@ -339,7 +363,19 @@ export abstract class Amostras {
 					],
 				},
 			],
-			response_format: zodResponseFormat(aiSchema, "amostra_extraido"),
+			response_format: {
+				type: "json_schema",
+				json_schema: {
+					name: "amostra_extraido",
+					strict: true,
+					// TypeBox schemas are plain JSON Schema; the stringify round-trip
+					// drops TypeBox's symbol annotations.
+					schema: {
+						...JSON.parse(JSON.stringify(Model.extracted)),
+						additionalProperties: false,
+					},
+				},
+			},
 		});
 
 		const choice = response.choices?.[0];
@@ -352,11 +388,18 @@ export abstract class Amostras {
 		if (message.refusal) {
 			throw status(400, { message: message.refusal });
 		}
-		if (!message.parsed) {
+
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(message.content ?? "");
+		} catch {
+			throw status(500, { message: "Erro na OpenAI" });
+		}
+		if (!Value.Check(Model.extracted, parsed)) {
 			throw status(500, { message: "Erro na OpenAI" });
 		}
 
-		return message.parsed;
+		return normalizeContato(parsed);
 	}
 
 	static async generatePlanilha(

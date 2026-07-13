@@ -1,7 +1,7 @@
 import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import type { z } from "zod";
-import { cnpjSchema, cpfSchema } from "@/utils/schemas";
+import { createInsertSchema } from "drizzle-typebox";
+import { t } from "elysia";
+import { CNPJ_PATTERN, CPF_PATTERN } from "@/utils/schemas";
 
 export const avaliadores = pgTable("avaliadores", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -12,25 +12,20 @@ export const avaliadores = pgTable("avaliadores", {
 	registroCrea: varchar({ length: 15 }).notNull(),
 });
 
-export const avaliadorSelectSchema = createSelectSchema(avaliadores);
-export const avaliadorInsertSchema = createInsertSchema(avaliadores, {
-	cpf: cpfSchema,
-	cnpj: cnpjSchema,
+const insertSchema = createInsertSchema(avaliadores, {
+	cpf: t.String({ pattern: CPF_PATTERN }),
+	cnpj: t.String({ pattern: CNPJ_PATTERN }),
 });
-export const avaliadorUpdateSchema = avaliadorInsertSchema
-	.partial()
-	.refine((data) => Object.keys(data).length > 0, {
-		message: "Informe ao menos um campo para atualizar.",
-	});
 
 export const AvaliadoresModel = {
-	insert: avaliadorInsertSchema,
-	update: avaliadorUpdateSchema,
+	insert: insertSchema,
+	update: t.Partial(insertSchema, {
+		minProperties: 1,
+		error: "Informe ao menos um campo para atualizar.",
+	}),
 } as const;
 
-export type AvaliadorSelect = z.infer<typeof avaliadorSelectSchema>;
-export type AvaliadorInsert = z.infer<typeof avaliadorInsertSchema>;
-export type AvaliadorUpdate = z.infer<typeof avaliadorUpdateSchema>;
+export type AvaliadorSelect = typeof avaliadores.$inferSelect;
 export type AvaliadoresModel = {
-	[K in keyof typeof AvaliadoresModel]: z.infer<(typeof AvaliadoresModel)[K]>;
+	[K in keyof typeof AvaliadoresModel]: (typeof AvaliadoresModel)[K]["static"];
 };

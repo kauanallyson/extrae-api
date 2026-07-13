@@ -8,9 +8,11 @@ import {
 	timestamp,
 	varchar,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-typebox";
+import { type TSchema, t } from "elysia";
 import { avaliadores } from "@/modules/avaliadores/model";
+import { CEP_PATTERN, TELEFONE_PATTERN } from "@/utils/schemas";
+import { spread } from "@/utils/typebox";
 
 export const padraoAcabamentoEnum = pgEnum("padrao_acabamento", [
 	"Mínimo",
@@ -87,82 +89,69 @@ export const amostras = pgTable("amostras", {
 		.notNull(),
 });
 
-const stripNonDigits = (value: unknown): unknown =>
-	typeof value === "string" ? value.replace(/\D/g, "") : value;
+// Intermediate variables avoid "type instantiation is possibly infinite"
+// when nesting drizzle-typebox output inside Elysia schemas.
+const insertSchema = createInsertSchema(amostras, {
+	cep: t.Nullable(t.String({ pattern: CEP_PATTERN })),
+	telefone: t.Nullable(t.String({ pattern: TELEFONE_PATTERN })),
+});
+const selectSchema = createSelectSchema(amostras);
+const selectFields = spread(selectSchema);
 
-const normalizeCep = (value: unknown): unknown => {
-	if (typeof value !== "string") return value;
-	const digits = value.replace(/\D/g, "");
-	return digits.length === 8
-		? `${digits.slice(0, 5)}-${digits.slice(5)}`
-		: value;
-};
-
-export const selectAmostraSchema = createSelectSchema(amostras);
-export const insertAmostraSchema = createInsertSchema(amostras, {
-	cep: (schema) => z.preprocess(normalizeCep, schema),
-	telefone: (schema) => z.preprocess(stripNonDigits, schema),
-})
-	.omit({
-		createdAt: true,
-		updatedAt: true,
-	})
-	.partial()
-	.required({ avaliadorId: true });
-export const updateAmostraSchema = insertAmostraSchema
-	.partial()
-	.refine((data) => Object.keys(data).length > 0, {
-		message: "Informe ao menos um campo para atualizar.",
-	});
-
-const amostrasFilterSchema = z.object({
-	from: z.string().optional(),
-	to: z.string().optional(),
-	municipio: z.string().optional(),
-	uf: z.string().length(2).optional(),
-	valorImovelMin: z.coerce.number().optional(),
-	valorImovelMax: z.coerce.number().optional(),
-	valorTerrenoMin: z.coerce.number().optional(),
-	valorTerrenoMax: z.coerce.number().optional(),
+const filterSchema = t.Object({
+	from: t.Optional(t.String()),
+	to: t.Optional(t.String()),
+	municipio: t.Optional(t.String()),
+	uf: t.Optional(t.String({ minLength: 2, maxLength: 2 })),
+	valorImovelMin: t.Optional(t.Number()),
+	valorImovelMax: t.Optional(t.Number()),
+	valorTerrenoMin: t.Optional(t.Number()),
+	valorTerrenoMax: t.Optional(t.Number()),
 });
 
-function optionalNullable<T extends z.ZodTypeAny>(schema: T) {
-	return schema
-		.nullable()
-		.optional()
-		.transform((value) => value ?? null);
-}
+const optionalNullable = <T extends TSchema>(schema: T) =>
+	t.Optional(t.Union([schema, t.Null()], { default: null }));
 
 export const AmostrasModel = {
-	insert: insertAmostraSchema,
-	update: updateAmostraSchema,
-	filter: amostrasFilterSchema,
-	planilhaQuery: amostrasFilterSchema.extend({
-		fields: z.string().optional(),
+	select: selectSchema,
+	insert: t.Composite([
+		t.Partial(t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"])),
+		t.Pick(insertSchema, ["avaliadorId"]),
+	]),
+	update: t.Partial(t.Omit(insertSchema, ["createdAt", "updatedAt"]), {
+		minProperties: 1,
+		error: "Informe ao menos um campo para atualizar.",
 	}),
-	similaresQuery: z.object({
-		raioKm: z.coerce.number().positive().default(5),
-		limit: z.coerce.number().int().positive().default(50),
+	filter: filterSchema,
+	planilhaQuery: t.Composite([
+		filterSchema,
+		t.Object({ fields: t.Optional(t.String()) }),
+	]),
+	similaresQuery: t.Object({
+		raioKm: t.Number({ exclusiveMinimum: 0, default: 5 }),
+		limit: t.Integer({ minimum: 1, default: 50 }),
 	}),
-	similaresAlvo: z.object({
-		coordenadaS: z.string().min(1, "coordenadaS é obrigatório"),
-		coordenadaW: z.string().min(1, "coordenadaW é obrigatório"),
-		areaTerreno: optionalNullable(z.number()),
-		areaConstruida: optionalNullable(z.number()),
-		padraoAcabamento: optionalNullable(z.enum(padraoAcabamentoEnum.enumValues)),
-		estadoConservacao: optionalNullable(
-			z.enum(estadoConservacaoEnum.enumValues),
-		),
-		dataReferencia: optionalNullable(z.string()),
+	similaresAlvo: t.Object({
+		coordenadaS: t.String({ minLength: 1, error: "coordenadaS é obrigatório" }),
+		coordenadaW: t.String({ minLength: 1, error: "coordenadaW é obrigatório" }),
+		areaTerreno: optionalNullable(selectFields.areaTerreno),
+		areaConstruida: optionalNullable(selectFields.areaConstruida),
+		padraoAcabamento: optionalNullable(selectFields.padraoAcabamento),
+		estadoConservacao: optionalNullable(selectFields.estadoConservacao),
+		dataReferencia: optionalNullable(selectFields.dataReferencia),
 	}),
-	pdf: z.object({
-		pdf: z.file().max(10 * 1024 * 1024, "PDF deve ter no máximo 10MB"),
+	pdf: t.Object({
+		pdf: t.File({
+			maxSize: 10 * 1024 * 1024,
+			error: "PDF deve ter no máximo 10MB",
+		}),
 	}),
+	extracted: t.Required(
+		t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"]),
+	),
 } as const;
 
-export type SelectAmostra = z.infer<typeof selectAmostraSchema>;
-export type InsertAmostra = z.infer<typeof insertAmostraSchema>;
-export type UpdateAmostra = z.infer<typeof updateAmostraSchema>;
+export type SelectAmostra = typeof amostras.$inferSelect;
 export type AmostrasModel = {
-	[K in keyof typeof AmostrasModel]: z.infer<(typeof AmostrasModel)[K]>;
+	[K in keyof typeof AmostrasModel]: (typeof AmostrasModel)[K]["static"];
 };
