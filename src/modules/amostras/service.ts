@@ -12,7 +12,6 @@ import {
 	stripNonDigits,
 } from "@/utils/strings";
 import { cellValue, writeEntries } from "@/utils/xlsx";
-import { buildAmostrasFilters } from "./filters";
 import type { SelectAmostra } from "./model";
 import { type AmostrasModel, amostras, AmostrasModel as Model } from "./model";
 import { SYSTEM_PROMPT } from "./prompt";
@@ -124,17 +123,8 @@ function resolveFields(rawFields: string | undefined): string[] {
 }
 
 export abstract class Amostras {
-	static async list(filter: AmostrasModel["filter"]): Promise<SelectAmostra[]> {
-		const filters = buildAmostrasFilters(filter);
-		if (!filters.ok) {
-			throw status(400, { message: filters.message });
-		}
-
-		return db
-			.select()
-			.from(amostras)
-			.where(filters.where)
-			.orderBy(desc(amostras.createdAt));
+	static async list(): Promise<SelectAmostra[]> {
+		return db.select().from(amostras).orderBy(desc(amostras.createdAt));
 	}
 
 	static async getById(id: number): Promise<SelectAmostra> {
@@ -264,11 +254,6 @@ export abstract class Amostras {
 	}> {
 		const fields = resolveFields(query.fields);
 
-		const filters = buildAmostrasFilters(query);
-		if (!filters.ok) {
-			throw status(400, { message: filters.message });
-		}
-
 		const rows = await db
 			.select({
 				...getTableColumns(amostras),
@@ -276,7 +261,6 @@ export abstract class Amostras {
 			})
 			.from(amostras)
 			.leftJoin(avaliadores, eq(amostras.avaliadorId, avaliadores.id))
-			.where(filters.where)
 			.orderBy(desc(amostras.createdAt));
 
 		const workbook = new ExcelJS.Workbook();

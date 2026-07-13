@@ -96,17 +96,6 @@ const insertSchema = createInsertSchema(amostras, {
 });
 const selectSchema = createSelectSchema(amostras);
 
-const filterSchema = t.Object({
-	from: t.Optional(t.String()),
-	to: t.Optional(t.String()),
-	municipio: t.Optional(t.String()),
-	uf: t.Optional(t.String({ minLength: 2, maxLength: 2 })),
-	valorImovelMin: t.Optional(t.Number()),
-	valorImovelMax: t.Optional(t.Number()),
-	valorTerrenoMin: t.Optional(t.Number()),
-	valorTerrenoMax: t.Optional(t.Number()),
-});
-
 export const AmostrasModel = {
 	select: selectSchema,
 	insert: t.Composite([
@@ -117,11 +106,7 @@ export const AmostrasModel = {
 		minProperties: 1,
 		error: "Informe ao menos um campo para atualizar.",
 	}),
-	filter: filterSchema,
-	planilhaQuery: t.Composite([
-		filterSchema,
-		t.Object({ fields: t.Optional(t.String()) }),
-	]),
+	planilhaQuery: t.Object({ fields: t.Optional(t.String()) }),
 	pdf: t.Object({
 		pdf: t.File({
 			maxSize: 10 * 1024 * 1024,
