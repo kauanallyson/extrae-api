@@ -9,10 +9,9 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-typebox";
-import { type TSchema, t } from "elysia";
+import { t } from "elysia";
 import { avaliadores } from "@/modules/avaliadores/model";
 import { CEP_PATTERN, TELEFONE_PATTERN } from "@/utils/schemas";
-import { spread } from "@/utils/typebox";
 
 export const padraoAcabamentoEnum = pgEnum("padrao_acabamento", [
 	"Mínimo",
@@ -96,7 +95,6 @@ const insertSchema = createInsertSchema(amostras, {
 	telefone: t.Nullable(t.String({ pattern: TELEFONE_PATTERN })),
 });
 const selectSchema = createSelectSchema(amostras);
-const selectFields = spread(selectSchema);
 
 const filterSchema = t.Object({
 	from: t.Optional(t.String()),
@@ -108,9 +106,6 @@ const filterSchema = t.Object({
 	valorTerrenoMin: t.Optional(t.Number()),
 	valorTerrenoMax: t.Optional(t.Number()),
 });
-
-const optionalNullable = <T extends TSchema>(schema: T) =>
-	t.Optional(t.Union([schema, t.Null()], { default: null }));
 
 export const AmostrasModel = {
 	select: selectSchema,
@@ -127,19 +122,6 @@ export const AmostrasModel = {
 		filterSchema,
 		t.Object({ fields: t.Optional(t.String()) }),
 	]),
-	similaresQuery: t.Object({
-		raioKm: t.Number({ exclusiveMinimum: 0, default: 5 }),
-		limit: t.Integer({ minimum: 1, default: 50 }),
-	}),
-	similaresAlvo: t.Object({
-		coordenadaS: t.String({ minLength: 1, error: "coordenadaS é obrigatório" }),
-		coordenadaW: t.String({ minLength: 1, error: "coordenadaW é obrigatório" }),
-		areaTerreno: optionalNullable(selectFields.areaTerreno),
-		areaConstruida: optionalNullable(selectFields.areaConstruida),
-		padraoAcabamento: optionalNullable(selectFields.padraoAcabamento),
-		estadoConservacao: optionalNullable(selectFields.estadoConservacao),
-		dataReferencia: optionalNullable(selectFields.dataReferencia),
-	}),
 	pdf: t.Object({
 		pdf: t.File({
 			maxSize: 10 * 1024 * 1024,

@@ -1,32 +1,21 @@
 import { Value } from "@sinclair/typebox/value";
-import {
-	and,
-	desc,
-	eq,
-	getTableColumns,
-	isNotNull,
-	ne,
-	type SQL,
-} from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
 import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
+import {
+	normalizeCep,
+	sanitizeAsciiWord,
+	stripNonDigits,
+} from "@/utils/strings";
+import { cellValue, writeEntries } from "@/utils/xlsx";
 import { buildAmostrasFilters } from "./filters";
 import type { SelectAmostra } from "./model";
 import { type AmostrasModel, amostras, AmostrasModel as Model } from "./model";
 import { SYSTEM_PROMPT } from "./prompt";
-import {
-	type AmostraSimilar,
-	calcularScore,
-	distanciaKm,
-	type Estimativa,
-	estimarValores,
-	parseCoordenadaDms,
-	type SimilaridadeAlvo,
-} from "./similarity";
 
 function notFound(id: number): never {
 	throw status(404, { message: `Amostra ${id} nao encontrada.` });
@@ -38,30 +27,6 @@ async function ensureAvaliadorExiste(avaliadorId: number): Promise<void> {
 	}
 }
 
-export interface SimilaresResult {
-	amostra: SelectAmostra;
-	similares: AmostraSimilar[];
-	estimativa: Estimativa | null;
-}
-
-export interface SimilaresPorCriteriosResult {
-	similares: AmostraSimilar[];
-	estimativa: Estimativa | null;
-}
-
-const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
-
-const stripNonDigits = (value: string | null | undefined): typeof value =>
-	typeof value === "string" ? value.replace(/\D/g, "") : value;
-
-const normalizeCep = (value: string | null | undefined): typeof value => {
-	if (typeof value !== "string") return value;
-	const digits = value.replace(/\D/g, "");
-	return digits.length === 8
-		? `${digits.slice(0, 5)}-${digits.slice(5)}`
-		: value;
-};
-
 function normalizeContato<
 	T extends { cep?: string | null; telefone?: string | null },
 >(data: T): T {
@@ -71,6 +36,8 @@ function normalizeContato<
 		telefone: stripNonDigits(data.telefone),
 	} as T;
 }
+
+const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
 
 const META_FIELDS = new Set(["id", "avaliadorId", "createdAt", "updatedAt"]);
 
@@ -134,15 +101,6 @@ const RAE_EXCLUDED_FIELDS = new Set([
 	"updatedAt",
 ]);
 
-function cellValue(value: unknown): string | number {
-	if (value == null) return "";
-	if (typeof value === "number") return value;
-	if (Array.isArray(value)) {
-		return value.map((item) => (item != null ? String(item) : "")).join(", ");
-	}
-	return String(value);
-}
-
 function resolveFields(rawFields: string | undefined): string[] {
 	if (!rawFields) return [...DEFAULT_FIELDS];
 
@@ -163,73 +121,6 @@ function resolveFields(rawFields: string | undefined): string[] {
 	}
 
 	return fields;
-}
-
-function writeEntries(
-	sheet: ExcelJS.Worksheet,
-	entries: [string, unknown][],
-	excludedFields: Set<string> = new Set(),
-): void {
-	for (const [key, value] of entries) {
-		if (excludedFields.has(key)) continue;
-
-		if (Array.isArray(value)) {
-			const row = sheet.addRow([key, ...value.map((item) => item ?? "")]);
-			row.getCell(1).font = { bold: false };
-		} else if (typeof value === "number") {
-			sheet.addRow([key, value]);
-		} else {
-			sheet.addRow([key, value != null ? String(value) : ""]);
-		}
-	}
-}
-
-async function calcularSimilares(
-	alvo: SimilaridadeAlvo,
-	options: { raioKm: number; limit: number },
-	invalidCoordsMessage: string,
-	excludeId?: number,
-): Promise<SimilaresPorCriteriosResult> {
-	const alvoLat = parseCoordenadaDms(alvo.coordenadaS);
-	const alvoLon = parseCoordenadaDms(alvo.coordenadaW);
-	if (alvoLat === null || alvoLon === null) {
-		throw status(422, { message: invalidCoordsMessage });
-	}
-
-	const conditions: SQL[] = [
-		isNotNull(amostras.coordenadaS),
-		isNotNull(amostras.coordenadaW),
-		isNotNull(amostras.valorImovel),
-		isNotNull(amostras.valorTerreno),
-	];
-	if (excludeId !== undefined) conditions.push(ne(amostras.id, excludeId));
-
-	const candidatas = await db
-		.select()
-		.from(amostras)
-		.where(and(...conditions));
-
-	const dentroDoRaio: AmostraSimilar[] = [];
-	for (const candidata of candidatas) {
-		const lat = parseCoordenadaDms(candidata.coordenadaS);
-		const lon = parseCoordenadaDms(candidata.coordenadaW);
-		if (lat === null || lon === null) continue;
-
-		const distKm = distanciaKm({ lat: alvoLat, lon: alvoLon }, { lat, lon });
-		if (distKm > options.raioKm) continue;
-
-		const score = calcularScore(alvo, candidata, distKm, options.raioKm);
-		dentroDoRaio.push({ amostra: candidata, score, distanciaKm: distKm });
-	}
-
-	const similares = dentroDoRaio
-		.sort((a, b) => b.score - a.score)
-		.slice(0, options.limit);
-
-	return {
-		similares,
-		estimativa: similares.length > 0 ? estimarValores(similares) : null,
-	};
 }
 
 export abstract class Amostras {
@@ -255,41 +146,6 @@ export abstract class Amostras {
 
 		if (!row) notFound(id);
 		return row;
-	}
-
-	static async findSimilares(
-		id: number,
-		options: AmostrasModel["similaresQuery"],
-	): Promise<SimilaresResult> {
-		const alvo = await Amostras.getById(id);
-
-		const resultado = await calcularSimilares(
-			alvo,
-			options,
-			`Amostra ${id} nao possui coordenadas validas para calcular similares.`,
-			id,
-		);
-
-		return { amostra: alvo, ...resultado };
-	}
-
-	static async findSimilaresPorCriterios(
-		alvo: AmostrasModel["similaresAlvo"],
-		options: AmostrasModel["similaresQuery"],
-	): Promise<SimilaresPorCriteriosResult> {
-		return calcularSimilares(
-			{
-				coordenadaS: alvo.coordenadaS,
-				coordenadaW: alvo.coordenadaW,
-				areaTerreno: alvo.areaTerreno ?? null,
-				areaConstruida: alvo.areaConstruida ?? null,
-				padraoAcabamento: alvo.padraoAcabamento ?? null,
-				estadoConservacao: alvo.estadoConservacao ?? null,
-				dataReferencia: alvo.dataReferencia ?? null,
-			},
-			options,
-			"Coordenadas informadas nao sao validas para calcular similares.",
-		);
 	}
 
 	static async create(data: AmostrasModel["insert"]): Promise<SelectAmostra> {
@@ -368,8 +224,6 @@ export abstract class Amostras {
 				json_schema: {
 					name: "amostra_extraido",
 					strict: true,
-					// TypeBox schemas are plain JSON Schema; the stringify round-trip
-					// drops TypeBox's symbol annotations.
 					schema: {
 						...JSON.parse(JSON.stringify(Model.extracted)),
 						additionalProperties: false,
@@ -484,11 +338,7 @@ export abstract class Amostras {
 		const buffer = await workbook.xlsx.writeBuffer();
 
 		const rawFirst = amostra.proponente?.trim().split(" ")[0] ?? "";
-		const safeFirst =
-			rawFirst
-				.normalize("NFD")
-				.replace(/[̀-ͯ]/g, "")
-				.replace(/[^a-zA-Z0-9]/g, "") || "cliente";
+		const safeFirst = sanitizeAsciiWord(rawFirst) || "cliente";
 
 		return {
 			buffer: Buffer.from(buffer),

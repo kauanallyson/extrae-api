@@ -25,16 +25,18 @@ describe("app", () => {
 		expect(await response.json()).toEqual({ message: "Rota não encontrada" });
 	});
 
-	test("POST /amostras/similares without coordenadas returns 400", async () => {
+	test("PUT /amostras/:id with empty body returns custom 400 message", async () => {
 		const response = await app.handle(
-			new Request("http://localhost/amostras/similares", {
-				method: "POST",
+			new Request("http://localhost/amostras/1", {
+				method: "PUT",
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({}),
 			}),
 		);
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toHaveProperty("message");
+		expect(await response.json()).toEqual({
+			message: "Informe ao menos um campo para atualizar.",
+		});
 	});
 });

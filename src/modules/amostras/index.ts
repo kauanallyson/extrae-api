@@ -1,10 +1,8 @@
 import { Elysia } from "elysia";
 import { idParamsSchema } from "@/utils/schemas";
+import { SPREADSHEET_CONTENT_TYPE } from "@/utils/xlsx";
 import { AmostrasModel } from "./model";
 import { Amostras } from "./service";
-
-const SPREADSHEET_CONTENT_TYPE =
-	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export const amostras = new Elysia({ prefix: "/amostras" })
 	.get(
@@ -35,16 +33,6 @@ export const amostras = new Elysia({ prefix: "/amostras" })
 	.get("/", ({ query }) => Amostras.list(query), {
 		query: AmostrasModel.filter,
 	})
-	.get(
-		"/:id/similares",
-		({ params: { id }, query }) => Amostras.findSimilares(id, query),
-		{ params: idParamsSchema, query: AmostrasModel.similaresQuery },
-	)
-	.post(
-		"/similares",
-		({ body, query }) => Amostras.findSimilaresPorCriterios(body, query),
-		{ body: AmostrasModel.similaresAlvo, query: AmostrasModel.similaresQuery },
-	)
 	.get("/:id", ({ params: { id } }) => Amostras.getById(id), {
 		params: idParamsSchema,
 	})

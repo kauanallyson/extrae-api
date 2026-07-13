@@ -1,3 +1,8 @@
+// spread/spreads are taken verbatim from the Elysia drizzle integration guide
+// (https://elysiajs.com/integrations/drizzle.html). They convert a Drizzle
+// table (or a drizzle-typebox schema) into a plain object of TypeBox fields,
+// so individual fields can be composed into route schemas without hitting
+// "type instantiation is possibly infinite" errors.
 import { Kind, type TObject } from "@sinclair/typebox";
 import type { Table } from "drizzle-orm";
 import {
