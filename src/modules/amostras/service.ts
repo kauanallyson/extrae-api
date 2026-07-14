@@ -468,7 +468,12 @@ export abstract class Amostras {
 
 		const entries: [string, unknown][] = [
 			...(avaliador
-				? Object.entries(avaliador).filter(([key]) => key !== "id")
+				? Object.entries(avaliador)
+						.filter(([key]) => key !== "id")
+						.map(([key, value]): [string, unknown] => [
+							`avaliador_${key}`,
+							value,
+						])
 				: []),
 			...Object.entries(amostra).filter(
 				([key]) => !RAE_EXCLUDED_FIELDS.has(key),
