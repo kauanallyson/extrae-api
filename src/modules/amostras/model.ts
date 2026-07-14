@@ -1,3 +1,4 @@
+import { Type } from "@sinclair/typebox";
 import {
 	bigint,
 	char,
@@ -128,8 +129,8 @@ const extractedInsertSchema = createInsertSchema(amostras, {
 	telefone: t.Nullable(t.String()),
 });
 
-const percentuais = t.Array(t.Integer());
-const incidencias20 = t.Array(t.Integer(), {
+const percentuais = t.Array(Type.Integer());
+const incidencias20 = t.Array(Type.Integer(), {
 	minItems: 20,
 	maxItems: 20,
 });
