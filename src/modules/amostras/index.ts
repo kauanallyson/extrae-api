@@ -8,36 +8,35 @@ export const amostras = new Elysia({ prefix: "/amostras" })
 	.get("/planilha", async ({ set }) => {
 		const { buffer, filename } = await Amostras.generatePlanilha();
 
-		set.headers["content-type"] = SPREADSHEET_CONTENT_TYPE;
-		set.headers["content-disposition"] = `attachment; filename="${filename}"`;
+		set.headers["Content-Type"] = SPREADSHEET_CONTENT_TYPE;
+		set.headers["Content-Disposition"] = `attachment; filename="${filename}"`;
 		return buffer;
 	})
 	.post("/ia", ({ body }) => Amostras.extractFromPdf(body.pdf), {
 		body: AmostrasModel.pdf,
 	})
-	.get(
-		"/:id/rae",
-		async ({ params: { id }, set }) => {
-			const { buffer, filename } = await Amostras.generateRae(id);
-
-			set.headers["content-type"] = SPREADSHEET_CONTENT_TYPE;
-			set.headers["content-disposition"] = `attachment; filename="${filename}"`;
-			return buffer;
-		},
-		{ params: idParamsSchema },
-	)
 	.get("/", ({ query }) => Amostras.list(query), {
 		query: AmostrasModel.listQuery,
 	})
 	.get("/:id", ({ params: { id } }) => Amostras.getById(id), {
 		params: idParamsSchema,
 	})
+	.get(
+		"/:id/rae",
+		async ({ params: { id }, set }) => {
+			const { buffer, filename } = await Amostras.generateRae(id);
+
+			set.headers["Content-Type"] = SPREADSHEET_CONTENT_TYPE;
+			set.headers["Content-Disposition"] = `attachment; filename="${filename}"`;
+			set.headers["Content-Length"] = buffer.byteLength.toString();
+			return buffer;
+		},
+		{ params: idParamsSchema },
+	)
 	.post(
 		"/",
 		async ({ body, status }) => status(201, await Amostras.create(body)),
-		{
-			body: AmostrasModel.insert,
-		},
+		{ body: AmostrasModel.insert },
 	)
 	.put("/:id", ({ params: { id }, body }) => Amostras.update(id, body), {
 		params: idParamsSchema,

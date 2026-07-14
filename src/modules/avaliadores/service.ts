@@ -1,4 +1,4 @@
-import { and, eq, ne, or, type SQL } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
 import { formatCnpj, formatCpf } from "@/utils/strings";
@@ -51,7 +51,12 @@ export abstract class Avaliadores {
 		data: AvaliadoresModel["insert"],
 	): Promise<AvaliadorSelect> {
 		const values = normalizeDocumentos(data);
-		await Avaliadores.ensureCpfCnpjDisponiveis(values);
+		if (values.cpf && (await Avaliadores.cpfExists(values.cpf))) {
+			throw status(409, { message: "Ja existe um avaliador com este CPF." });
+		}
+		if (values.cnpj && (await Avaliadores.cnpjExists(values.cnpj))) {
+			throw status(409, { message: "Ja existe um avaliador com este CNPJ." });
+		}
 
 		const [row] = await db.insert(avaliadores).values(values).returning();
 		if (!row) {
@@ -65,7 +70,12 @@ export abstract class Avaliadores {
 		data: AvaliadoresModel["update"],
 	): Promise<AvaliadorSelect> {
 		const values = normalizeDocumentos(data);
-		await Avaliadores.ensureCpfCnpjDisponiveis(values, id);
+		if (values.cpf && (await Avaliadores.cpfExists(values.cpf, id))) {
+			throw status(409, { message: "Ja existe um avaliador com este CPF." });
+		}
+		if (values.cnpj && (await Avaliadores.cnpjExists(values.cnpj, id))) {
+			throw status(409, { message: "Ja existe um avaliador com este CNPJ." });
+		}
 
 		const [row] = await db
 			.update(avaliadores)
@@ -87,31 +97,36 @@ export abstract class Avaliadores {
 		return row;
 	}
 
-	private static async ensureCpfCnpjDisponiveis(
-		data: { cpf?: string; cnpj?: string },
+	private static async cpfExists(
+		cpf: string,
 		excludeId?: number,
-	): Promise<void> {
-		const clashes: SQL[] = [];
-		if (data.cpf) clashes.push(eq(avaliadores.cpf, data.cpf));
-		if (data.cnpj) clashes.push(eq(avaliadores.cnpj, data.cnpj));
-		if (clashes.length === 0) return;
-
-		const conflict = or(...clashes);
+	): Promise<boolean> {
+		const clash = eq(avaliadores.cpf, cpf);
 		const where =
-			excludeId === undefined
-				? conflict
-				: and(conflict, ne(avaliadores.id, excludeId));
+			excludeId === undefined ? clash : and(clash, ne(avaliadores.id, excludeId));
 
 		const [row] = await db
 			.select({ id: avaliadores.id })
 			.from(avaliadores)
 			.where(where)
 			.limit(1);
-
-		if (row) {
-			throw status(409, {
-				message: "Ja existe um avaliador com este CPF ou CNPJ.",
-			});
-		}
+		return !!row;
 	}
+
+	private static async cnpjExists(
+		cnpj: string,
+		excludeId?: number,
+	): Promise<boolean> {
+		const clash = eq(avaliadores.cnpj, cnpj);
+		const where =
+			excludeId === undefined ? clash : and(clash, ne(avaliadores.id, excludeId));
+
+		const [row] = await db
+			.select({ id: avaliadores.id })
+			.from(avaliadores)
+			.where(where)
+			.limit(1);
+		return !!row;
+	}
+
 }
