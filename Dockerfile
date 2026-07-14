@@ -1,16 +1,18 @@
-FROM node:24-alpine
+FROM oven/bun:1.3-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json tsconfig.json drizzle.config.ts ./
+COPY package.json bun.lock tsconfig.json drizzle.config.ts ./
 
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 COPY ./src ./src
 COPY ./drizzle ./drizzle
 
 ENV NODE_ENV=production
 
+USER bun
+
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm run db:migrate && npm run start"]
+CMD ["sh", "-c", "bunx drizzle-kit migrate && bun run src/index.ts"]

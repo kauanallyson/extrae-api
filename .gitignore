@@ -40,3 +40,4 @@ yarn-error.log*
 **/*.tgz
 **/*.log
 **/*.bun
+.claude/*.local.md
