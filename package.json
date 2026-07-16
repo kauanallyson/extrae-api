@@ -18,6 +18,7 @@
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.4.2",
+		"@elysiajs/jwt": "^1.4.2",
 		"@elysiajs/openapi": "^1.4.15",
 		"@sinclair/typebox": "^0.34.52",
 		"drizzle-orm": "^0.45.2",

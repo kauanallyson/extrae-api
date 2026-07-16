@@ -57,6 +57,13 @@
       "when": 1783983094123,
       "tag": "0007_friendly_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784223047422,
+      "tag": "0008_big_bloodstrike",
+      "breakpoints": true
     }
   ]
 }
