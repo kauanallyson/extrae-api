@@ -24,6 +24,7 @@ export const auth = new Elysia({ prefix: "/auth" })
 		},
 		{ body: AuthModel.login },
 	)
+	// .guard() scopes authGuard to /me only — a plain .use(authGuard) here would leak the auth requirement to routes registered later (amostras/avaliadores)
 	.guard({}, (app) =>
 		app.use(authGuard).get("/me", ({ userId }) => Auth.me(userId)),
 	);
