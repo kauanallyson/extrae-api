@@ -31,6 +31,7 @@ export abstract class Auth {
 
 	static async login(data: AuthModel["login"]): Promise<PublicUser> {
 		const row = await Auth.findByEmail(data.email);
+		// same message for both cases so we don't leak which emails are registered
 		if (!row || !(await Bun.password.verify(data.senha, row.senhaHash))) {
 			throw status(401, { message: "Credenciais inválidas." });
 		}
@@ -44,6 +45,7 @@ export abstract class Auth {
 			.where(eq(usuarios.id, id))
 			.limit(1);
 
+		// id comes from a verified JWT, so a missing row means the session is stale, not a missing resource — 401, not 404
 		if (!row) throw status(401, { message: "Usuário não encontrado." });
 		return toPublicUser(row);
 	}
