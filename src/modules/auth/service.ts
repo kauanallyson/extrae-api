@@ -18,10 +18,18 @@ export abstract class Auth {
 		}
 
 		const senhaHash = await Bun.password.hash(data.senha);
-		const [row] = await db
-			.insert(usuarios)
-			.values({ nome: data.nome, email: data.email, senhaHash })
-			.returning();
+		let row: UsuarioSelect | undefined;
+		try {
+			[row] = await db
+				.insert(usuarios)
+				.values({ nome: data.nome, email: data.email, senhaHash })
+				.returning();
+		} catch (err) {
+			if (err instanceof Error && "code" in err && err.code === "23505") {
+				throw status(409, { message: "Já existe um usuário com este e-mail." });
+			}
+			throw err;
+		}
 
 		if (!row) {
 			throw status(500, { message: "Ocorreu um erro ao criar o usuário." });

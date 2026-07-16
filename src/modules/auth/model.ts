@@ -4,7 +4,7 @@ import { EMAIL_REGEX } from "@/utils/regex";
 export const AuthModel = {
 	register: t.Object({
 		nome: t.String({ minLength: 1 }),
-		email: t.String({ pattern: EMAIL_REGEX }),
+		email: t.String({ pattern: EMAIL_REGEX, maxLength: 255 }),
 		senha: t.String({ minLength: 8 }),
 	}),
 	login: t.Object({
