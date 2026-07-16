@@ -8,3 +8,5 @@ export const CEP_REGEX = "^\\d{5}-?\\d{3}$";
 export const DDD_REGEX = "^\\d{2,3}$";
 
 export const TELEFONE_REGEX = "^\\d{4,5}[- ]?\\d{4}$";
+
+export const EMAIL_REGEX = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
