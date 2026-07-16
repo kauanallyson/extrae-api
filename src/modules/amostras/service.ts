@@ -2,6 +2,7 @@ import { Value } from "@sinclair/typebox/value";
 import { asc, desc, eq, getTableColumns, inArray, lt } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
+import { pdf } from "pdf-to-img";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
 import { SYSTEM_PROMPT } from "@/config/prompt";
@@ -350,7 +351,11 @@ export abstract class Amostras {
 			throw status(400, { message: "O arquivo deve ser um pdf válido" });
 		}
 
-		const base64 = buffer.toString("base64");
+		const doc = await pdf(buffer, { scale: 2.5 });
+		const pageImages: Buffer[] = [];
+		for await (const page of doc) {
+			pageImages.push(page);
+		}
 
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o",
@@ -359,15 +364,13 @@ export abstract class Amostras {
 				{ role: "system", content: SYSTEM_PROMPT },
 				{
 					role: "user",
-					content: [
-						{
-							type: "file",
-							file: {
-								filename: file.name || "document.pdf",
-								file_data: `data:application/pdf;base64,${base64}`,
-							},
+					content: pageImages.map((page) => ({
+						type: "image_url" as const,
+						image_url: {
+							url: `data:image/png;base64,${page.toString("base64")}`,
+							detail: "high" as const,
 						},
-					],
+					})),
 				},
 			],
 			response_format: {
