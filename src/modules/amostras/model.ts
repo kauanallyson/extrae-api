@@ -179,8 +179,9 @@ export const AmostrasModel = {
 			t.Omit(extractedInsertSchema, ["avaliadorId", "createdAt", "updatedAt"]),
 		),
 		t.Object({
-			incidencias: t.Nullable(percentuais),
+			incidencias: t.Nullable(incidencias20),
 			acumuladoProposto: t.Nullable(percentuais),
+			camposNaoEncontrados: t.Array(t.String()),
 		}),
 	]),
 } as const;
