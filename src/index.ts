@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import { env } from "@/config/env";
 import { amostras } from "@/modules/amostras";
 import { auth } from "@/modules/auth";
+import { authGuard } from "@/modules/auth/guard";
 import { avaliadores } from "@/modules/avaliadores";
 import { firstIssueMessage } from "@/utils/typebox";
 
@@ -36,6 +37,7 @@ export const app = new Elysia()
 	})
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)
+	.use(authGuard)
 	.use(amostras)
 	.use(avaliadores);
 

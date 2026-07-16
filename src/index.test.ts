@@ -2,6 +2,26 @@ import { describe, expect, test } from "bun:test";
 import { app } from "@/index";
 
 describe("app", () => {
+	async function authHeader(): Promise<Record<string, string>> {
+		const email = `test-${crypto.randomUUID()}@example.com`;
+		await app.handle(
+			new Request("http://localhost/auth/register", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ nome: "Teste", email, senha: "senha1234" }),
+			}),
+		);
+		const loginResponse = await app.handle(
+			new Request("http://localhost/auth/login", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ email, senha: "senha1234" }),
+			}),
+		);
+		const { token } = await loginResponse.json();
+		return { authorization: `Bearer ${token}` };
+	}
+
 	test("GET /health returns ok", async () => {
 		const response = await app.handle(new Request("http://localhost/health"));
 
@@ -11,7 +31,9 @@ describe("app", () => {
 
 	test("GET /amostras/:id rejects non-numeric id with 400", async () => {
 		const response = await app.handle(
-			new Request("http://localhost/amostras/abc"),
+			new Request("http://localhost/amostras/abc", {
+				headers: await authHeader(),
+			}),
 		);
 
 		expect(response.status).toBe(400);
@@ -20,11 +42,31 @@ describe("app", () => {
 
 	test("GET /amostras rejects invalid pagination limit with 400", async () => {
 		const response = await app.handle(
-			new Request("http://localhost/amostras?limit=0"),
+			new Request("http://localhost/amostras?limit=0", {
+				headers: await authHeader(),
+			}),
 		);
 
 		expect(response.status).toBe(400);
 		expect(await response.json()).toHaveProperty("message");
+	});
+
+	test("GET /amostras without a token returns 401", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/amostras"),
+		);
+
+		expect(response.status).toBe(401);
+	});
+
+	test("GET /amostras with a valid token succeeds", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/amostras", {
+				headers: await authHeader(),
+			}),
+		);
+
+		expect(response.status).toBe(200);
 	});
 
 	test("unknown route returns 404 json", async () => {
@@ -38,7 +80,7 @@ describe("app", () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras/1", {
 				method: "PUT",
-				headers: { "content-type": "application/json" },
+				headers: { "content-type": "application/json", ...(await authHeader()) },
 				body: JSON.stringify({}),
 			}),
 		);
