@@ -48,4 +48,100 @@ describe("app", () => {
 			message: "Informe ao menos um campo para atualizar.",
 		});
 	});
+
+	test("POST /auth/register creates a user and returns a token", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/auth/register", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					nome: "Teste",
+					email: `test-${crypto.randomUUID()}@example.com`,
+					senha: "senha1234",
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		expect(await response.json()).toHaveProperty("token");
+	});
+
+	test("POST /auth/register with duplicate email returns 409", async () => {
+		const email = `test-${crypto.randomUUID()}@example.com`;
+		const register = () =>
+			app.handle(
+				new Request("http://localhost/auth/register", {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ nome: "Teste", email, senha: "senha1234" }),
+				}),
+			);
+
+		await register();
+		const response = await register();
+
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			message: "Já existe um usuário com este e-mail.",
+		});
+	});
+
+	test("POST /auth/login with wrong password returns 401", async () => {
+		const email = `test-${crypto.randomUUID()}@example.com`;
+		await app.handle(
+			new Request("http://localhost/auth/register", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ nome: "Teste", email, senha: "senha1234" }),
+			}),
+		);
+
+		const response = await app.handle(
+			new Request("http://localhost/auth/login", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ email, senha: "senhaerrada" }),
+			}),
+		);
+
+		expect(response.status).toBe(401);
+		expect(await response.json()).toEqual({ message: "Credenciais inválidas." });
+	});
+
+	test("GET /auth/me without a token returns 401", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/auth/me"),
+		);
+
+		expect(response.status).toBe(401);
+	});
+
+	test("POST /auth/login then GET /auth/me returns the user", async () => {
+		const email = `test-${crypto.randomUUID()}@example.com`;
+		await app.handle(
+			new Request("http://localhost/auth/register", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ nome: "Teste", email, senha: "senha1234" }),
+			}),
+		);
+		const loginResponse = await app.handle(
+			new Request("http://localhost/auth/login", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ email, senha: "senha1234" }),
+			}),
+		);
+		const { token } = await loginResponse.json();
+
+		const meResponse = await app.handle(
+			new Request("http://localhost/auth/me", {
+				headers: { authorization: `Bearer ${token}` },
+			}),
+		);
+
+		expect(meResponse.status).toBe(200);
+		const body = await meResponse.json();
+		expect(body).toMatchObject({ email, nome: "Teste" });
+	});
 });
