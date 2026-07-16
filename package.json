@@ -26,6 +26,7 @@
 		"elysia": "^1.4.29",
 		"exceljs": "^4.4.0",
 		"openai": "^6.41.0",
+		"pdf-to-img": "^6.2.0",
 		"pg": "^8.21.0"
 	},
 	"devDependencies": {
