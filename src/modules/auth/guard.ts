@@ -11,6 +11,7 @@ export const authGuard = new Elysia({ name: "auth-guard" })
 		if (!token) throw status(401, { message: "Token não informado." });
 
 		const payload = await jwt.verify(token);
+		// jwt.verify() resolves to `false` (not undefined/null) on an invalid/expired token, so `&&` short-circuits safely
 		const userId = payload && Number(payload.sub);
 		if (!userId) throw status(401, { message: "Token inválido ou expirado." });
 
