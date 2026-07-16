@@ -70,6 +70,24 @@ describe("app", () => {
 		expect(response.status).toBe(200);
 	});
 
+	test("GET /amostras with a malformed token returns 401", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/amostras", {
+				headers: { authorization: "Bearer not-a-real-token" },
+			}),
+		);
+
+		expect(response.status).toBe(401);
+	});
+
+	test("GET /avaliadores without a token returns 401", async () => {
+		const response = await app.handle(
+			new Request("http://localhost/avaliadores"),
+		);
+
+		expect(response.status).toBe(401);
+	});
+
 	test("unknown route returns 404 json", async () => {
 		const response = await app.handle(new Request("http://localhost/nope"));
 
