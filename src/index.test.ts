@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { app } from "@/index";
 
 describe("app", () => {
-	async function authHeader(): Promise<Record<string, string>> {
+	// no seeded test user exists, so register+login a fresh one on every call
+	async function authHeaders(): Promise<Record<string, string>> {
 		const email = `test-${crypto.randomUUID()}@example.com`;
 		await app.handle(
 			new Request("http://localhost/auth/register", {
@@ -32,7 +33,7 @@ describe("app", () => {
 	test("GET /amostras/:id rejects non-numeric id with 400", async () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras/abc", {
-				headers: await authHeader(),
+				headers: await authHeaders(),
 			}),
 		);
 
@@ -43,7 +44,7 @@ describe("app", () => {
 	test("GET /amostras rejects invalid pagination limit with 400", async () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras?limit=0", {
-				headers: await authHeader(),
+				headers: await authHeaders(),
 			}),
 		);
 
@@ -62,7 +63,7 @@ describe("app", () => {
 	test("GET /amostras with a valid token succeeds", async () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras", {
-				headers: await authHeader(),
+				headers: await authHeaders(),
 			}),
 		);
 
@@ -80,7 +81,7 @@ describe("app", () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras/1", {
 				method: "PUT",
-				headers: { "content-type": "application/json", ...(await authHeader()) },
+				headers: { "content-type": "application/json", ...(await authHeaders()) },
 				body: JSON.stringify({}),
 			}),
 		);

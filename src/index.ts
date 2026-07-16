@@ -37,6 +37,7 @@ export const app = new Elysia()
 	})
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)
+	// everything mounted below this line requires a valid Bearer token
 	.use(authGuard)
 	.use(amostras)
 	.use(avaliadores);
