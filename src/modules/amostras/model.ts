@@ -81,6 +81,7 @@ export const amostras = pgTable("amostras", {
 	usosPredominantes: text(),
 	viaAcesso: text(),
 	regiaoContexto: text(),
+	equacaoSISDEA: text(),
 	dataReferencia: text(),
 	createdAt: timestamp().defaultNow().notNull(),
 	updatedAt: timestamp()

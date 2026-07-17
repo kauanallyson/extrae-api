@@ -45,6 +45,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **padraoAcabamento:** copie o valor literal do campo "Padrão de Acabamento". Valores possíveis: 'Mínimo', 'Baixo', 'Normal (c/ aspectos de baixo)', 'Normal (forte predominância)', 'Normal (c/ aspectos de alto)', 'Alto (por predominância)' ou 'Alto (superior, luxo)'. Se o texto do documento não corresponder exatamente a nenhuma dessas opções, retorne "".
 - **regiaoContexto:** copie o valor literal do campo "Região no contexto urbano".
 - **estadoConservacao:** copie o valor literal do campo "Estado de Conservação". Valores possíveis: 'Em construção ou na planta', 'Bom (aparência de novo)', 'Bom (aparência de usado)', 'Regular (reparos simples)', 'Regular (reparos importantes)' ou 'Ruim'. Se não corresponder exatamente, retorne "".
+- **equacaoSISDEA:** é a parte de 'Função Estimativa' ou 'informações complementares'. se trata da equação que gera a estimativa de preço para o imóvel avaliado
 
 ## 5. FORMATAÇÃO
 - Respeite EXATAMENTE os nomes de campo do schema JSON fornecido.
