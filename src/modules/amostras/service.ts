@@ -173,6 +173,7 @@ const PLANILHA_FIELDS = [
 const RAE_EXCLUDED_FIELDS = new Set([
 	"id",
 	"avaliadorId",
+	"equacaoSISDEA",
 	"createdAt",
 	"updatedAt",
 ]);
