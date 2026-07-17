@@ -1,5 +1,5 @@
 import { Value } from "@sinclair/typebox/value";
-import { asc, desc, eq, getTableColumns, inArray, lt } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { status } from "elysia";
 import ExcelJS from "exceljs";
 import { pdf } from "pdf-to-img";
@@ -24,6 +24,34 @@ import {
 	incidencias,
 	AmostrasModel as Model,
 } from "./model";
+
+type AmostrasWith = NonNullable<
+	Parameters<typeof db.query.amostras.findFirst>[0]
+>["with"];
+
+const withPercentuais = {
+	incidencias: { orderBy: (incidencias, { asc }) => asc(incidencias.ordem) },
+	acumuladosPropostos: {
+		orderBy: (acumuladosPropostos, { asc }) => asc(acumuladosPropostos.ordem),
+	},
+} satisfies AmostrasWith;
+
+type AmostraComPercentuais = SelectAmostra & {
+	incidencias: { percentual: number }[];
+	acumuladosPropostos: { percentual: number }[];
+};
+
+function toSelect({
+	incidencias: incidenciasRows,
+	acumuladosPropostos: acumuladoRows,
+	...amostra
+}: AmostraComPercentuais): AmostrasModel["select"] {
+	return {
+		...amostra,
+		incidencias: incidenciasRows.map((row) => row.percentual),
+		acumuladoProposto: acumuladoRows.map((row) => row.percentual),
+	};
+}
 
 function notFound(id: number): never {
 	throw status(404, { message: `Amostra ${id} nao encontrada.` });
@@ -52,11 +80,6 @@ function normalizeContato<
 	} as T;
 }
 
-interface Percentuais {
-	incidencias: number[];
-	acumuladoProposto: number[];
-}
-
 function splitPercentuais<
 	T extends {
 		incidencias?: number[] | null;
@@ -78,50 +101,6 @@ function splitPercentuais<
 		scalars,
 		incidencias: incidenciasValues,
 		acumuladoProposto: acumuladoValues,
-	};
-}
-
-async function carregarPercentuais(
-	ids: number[],
-): Promise<Map<number, Percentuais>> {
-	const porAmostra = new Map<number, Percentuais>(
-		ids.map((id) => [id, { incidencias: [], acumuladoProposto: [] }]),
-	);
-	if (ids.length === 0) return porAmostra;
-
-	const [incidenciasRows, acumuladoRows] = await Promise.all([
-		db
-			.select()
-			.from(incidencias)
-			.where(inArray(incidencias.amostraId, ids))
-			.orderBy(asc(incidencias.amostraId), asc(incidencias.ordem)),
-		db
-			.select()
-			.from(acumuladosPropostos)
-			.where(inArray(acumuladosPropostos.amostraId, ids))
-			.orderBy(
-				asc(acumuladosPropostos.amostraId),
-				asc(acumuladosPropostos.ordem),
-			),
-	]);
-
-	for (const row of incidenciasRows) {
-		porAmostra.get(row.amostraId)?.incidencias.push(row.percentual);
-	}
-	for (const row of acumuladoRows) {
-		porAmostra.get(row.amostraId)?.acumuladoProposto.push(row.percentual);
-	}
-	return porAmostra;
-}
-
-function comPercentuais(
-	amostra: SelectAmostra,
-	percentuais: Percentuais | undefined,
-): AmostrasModel["select"] {
-	return {
-		...amostra,
-		incidencias: percentuais?.incidencias ?? [],
-		acumuladoProposto: percentuais?.acumuladoProposto ?? [],
 	};
 }
 
@@ -183,37 +162,36 @@ export abstract class Amostras {
 		data: AmostrasModel["select"][];
 		nextCursor: number | null;
 	}> {
-		const rows = await db
-			.select()
-			.from(amostras)
-			.where(
-				query.cursor !== undefined ? lt(amostras.id, query.cursor) : undefined,
-			)
-			.orderBy(desc(amostras.id))
-			.limit(query.limit + 1);
+		const rows = await db.query.amostras.findMany({
+			where: (amostras, { and, eq, lt }) =>
+				and(
+					query.cursor !== undefined
+						? lt(amostras.id, query.cursor)
+						: undefined,
+					query.municipio !== undefined
+						? eq(amostras.municipio, query.municipio)
+						: undefined,
+				),
+			orderBy: (amostras, { desc }) => desc(amostras.id),
+			limit: query.limit + 1,
+			with: withPercentuais,
+		});
 
 		const page = rows.slice(0, query.limit);
 		const nextCursor =
 			rows.length > query.limit ? (page.at(-1)?.id ?? null) : null;
 
-		const percentuais = await carregarPercentuais(page.map((row) => row.id));
-		return {
-			data: page.map((row) => comPercentuais(row, percentuais.get(row.id))),
-			nextCursor,
-		};
+		return { data: page.map(toSelect), nextCursor };
 	}
 
 	static async getById(id: number): Promise<AmostrasModel["select"]> {
-		const [row] = await db
-			.select()
-			.from(amostras)
-			.where(eq(amostras.id, id))
-			.limit(1);
+		const row = await db.query.amostras.findFirst({
+			where: (amostras, { eq }) => eq(amostras.id, id),
+			with: withPercentuais,
+		});
 
 		if (!row) notFound(id);
-
-		const percentuais = await carregarPercentuais([id]);
-		return comPercentuais(row, percentuais.get(id));
+		return toSelect(row);
 	}
 
 	static async create(
@@ -326,20 +304,23 @@ export abstract class Amostras {
 			return updated;
 		});
 
-		const percentuais = await carregarPercentuais([id]);
-		return comPercentuais(row, percentuais.get(id));
+		const withRelations = await db.query.amostras.findFirst({
+			where: (amostras, { eq }) => eq(amostras.id, row.id),
+			with: withPercentuais,
+		});
+		if (!withRelations) notFound(id);
+		return toSelect(withRelations);
 	}
 
 	static async remove(id: number): Promise<AmostrasModel["select"]> {
-		const percentuais = await carregarPercentuais([id]);
-
-		const [row] = await db
-			.delete(amostras)
-			.where(eq(amostras.id, id))
-			.returning();
-
+		const row = await db.query.amostras.findFirst({
+			where: (amostras, { eq }) => eq(amostras.id, id),
+			with: withPercentuais,
+		});
 		if (!row) notFound(id);
-		return comPercentuais(row, percentuais.get(id));
+
+		await db.delete(amostras).where(eq(amostras.id, id));
+		return toSelect(row);
 	}
 
 	static async extractFromPdf(file: File): Promise<AmostrasModel["extracted"]> {
@@ -452,23 +433,17 @@ export abstract class Amostras {
 		buffer: Buffer;
 		filename: string;
 	}> {
-		const [amostra] = await db
-			.select()
-			.from(amostras)
-			.where(eq(amostras.id, id));
+		const amostra = await db.query.amostras.findFirst({
+			where: (amostras, { eq }) => eq(amostras.id, id),
+			with: { ...withPercentuais, avaliador: true },
+		});
 
 		if (!amostra) {
 			throw status(404, { message: `Amostra com id: ${id} não encontrada` });
 		}
 
-		const [percentuais, [avaliador]] = await Promise.all([
-			carregarPercentuais([id]),
-			db
-				.select()
-				.from(avaliadores)
-				.where(eq(avaliadores.id, amostra.avaliadorId)),
-		]);
-		const arrays = percentuais.get(id);
+		const { avaliador, incidencias, acumuladosPropostos, ...amostraScalars } =
+			amostra;
 
 		const entries: [string, unknown][] = [
 			...(avaliador
@@ -479,11 +454,14 @@ export abstract class Amostras {
 							value,
 						])
 				: []),
-			...Object.entries(amostra).filter(
+			...Object.entries(amostraScalars).filter(
 				([key]) => !RAE_EXCLUDED_FIELDS.has(key),
 			),
-			["incidencias", arrays?.incidencias ?? []],
-			["acumuladoProposto", arrays?.acumuladoProposto ?? []],
+			["incidencias", incidencias.map((row) => row.percentual)],
+			[
+				"acumuladoProposto",
+				acumuladosPropostos.map((row) => row.percentual),
+			],
 		];
 
 		const workbook = new ExcelJS.Workbook();

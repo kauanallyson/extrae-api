@@ -7,7 +7,7 @@
 - [x] fazer coleta de a413
 - [ ] formulário de coleta de amostras de mercado (verificar informações essenciais como: Padrão de acabamento, número de quartos, coordenadas geográficas e etc...)
 - [x] fazer sistema de login
-- [ ] coletar equação SISDEA
+- [x] coletar equação SISDEA
 
 ## EM BREVE
 

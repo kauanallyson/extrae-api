@@ -1,4 +1,5 @@
 import { Type } from "@sinclair/typebox";
+import { relations } from "drizzle-orm";
 import {
 	bigint,
 	char,
@@ -116,6 +117,32 @@ export const acumuladosPropostos = pgTable(
 	(table) => [unique().on(table.amostraId, table.ordem)],
 );
 
+export const amostrasRelations = relations(amostras, ({ one, many }) => ({
+	avaliador: one(avaliadores, {
+		fields: [amostras.avaliadorId],
+		references: [avaliadores.id],
+	}),
+	incidencias: many(incidencias),
+	acumuladosPropostos: many(acumuladosPropostos),
+}));
+
+export const incidenciasRelations = relations(incidencias, ({ one }) => ({
+	amostra: one(amostras, {
+		fields: [incidencias.amostraId],
+		references: [amostras.id],
+	}),
+}));
+
+export const acumuladosPropostosRelations = relations(
+	acumuladosPropostos,
+	({ one }) => ({
+		amostra: one(amostras, {
+			fields: [acumuladosPropostos.amostraId],
+			references: [amostras.id],
+		}),
+	}),
+);
+
 const insertSchema = createInsertSchema(amostras, {
 	cpf: t.Nullable(t.String({ pattern: CPF_REGEX })),
 	cnpj: t.Nullable(t.String({ pattern: CNPJ_REGEX })),
@@ -168,6 +195,7 @@ export const AmostrasModel = {
 	listQuery: t.Object({
 		cursor: t.Optional(t.Integer({ minimum: 1 })),
 		limit: t.Integer({ minimum: 1, maximum: 100, default: 20 }),
+		municipio: t.Optional(t.String()),
 	}),
 	pdf: t.Object({
 		pdf: t.File({
