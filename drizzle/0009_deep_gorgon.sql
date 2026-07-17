@@ -1,0 +1,1 @@
+ALTER TABLE "amostras" ADD COLUMN "equacao_sisdea" text;
