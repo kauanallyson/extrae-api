@@ -11,6 +11,7 @@ import { Avaliadores } from "@/modules/avaliadores/service";
 import {
 	formatCnpj,
 	formatCpf,
+	formatDateBr,
 	normalizeCep,
 	sanitizeAsciiWord,
 	stripNonDigits,
@@ -106,13 +107,18 @@ function splitPercentuais<
 
 const PDF_MAGIC = Buffer.from([0x25, 0x50, 0x44, 0x46]);
 
-const MONETARY_FIELDS = new Set([
+const DECIMAL_FIELDS = new Set([
 	"valorTerreno",
 	"valorImovel",
 	"valorUnitario",
+	"areaTerreno",
+	"areaConstruida",
+	"testada",
 ]);
 
-function centsToDecimal(value: unknown): unknown {
+const DATE_FIELDS = new Set(["dataReferencia"]);
+
+function toDecimal(value: unknown): unknown {
 	return typeof value === "number" ? value / 100 : value;
 }
 
@@ -126,9 +132,13 @@ const FIELD_RESOLVERS: Record<
 		if (!telefone) return "";
 		return ddd ? `(${ddd}) ${telefone}` : telefone;
 	},
-	valorTerreno: (row) => centsToDecimal(row.valorTerreno),
-	valorImovel: (row) => centsToDecimal(row.valorImovel),
-	valorUnitario: (row) => centsToDecimal(row.valorUnitario),
+	valorTerreno: (row) => toDecimal(row.valorTerreno),
+	valorImovel: (row) => toDecimal(row.valorImovel),
+	valorUnitario: (row) => toDecimal(row.valorUnitario),
+	areaTerreno: (row) => toDecimal(row.areaTerreno),
+	areaConstruida: (row) => toDecimal(row.areaConstruida),
+	testada: (row) => toDecimal(row.testada),
+	dataReferencia: (row) => formatDateBr(row.dataReferencia as string | null),
 };
 
 const PLANILHA_FIELDS = [
@@ -471,15 +481,19 @@ export abstract class Amostras {
 				.filter(([key]) => !RAE_EXCLUDED_FIELDS.has(key))
 				.map(([key, value]): [string, unknown] => [
 					key,
-					MONETARY_FIELDS.has(key) ? centsToDecimal(value) : value,
+					DECIMAL_FIELDS.has(key)
+						? toDecimal(value)
+						: DATE_FIELDS.has(key)
+							? formatDateBr(value as string | null)
+							: value,
 				]),
 			[
 				"incidencias",
-				incidencias.map((row) => centsToDecimal(row.percentual)),
+				incidencias.map((row) => toDecimal(row.percentual)),
 			],
 			[
 				"acumuladoProposto",
-				acumuladosPropostos.map((row) => centsToDecimal(row.percentual)),
+				acumuladosPropostos.map((row) => toDecimal(row.percentual)),
 			],
 		];
 
