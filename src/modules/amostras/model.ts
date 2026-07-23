@@ -197,6 +197,11 @@ export const AmostrasModel = {
 		limit: t.Integer({ minimum: 1, maximum: 100, default: 20 }),
 		municipio: t.Optional(t.String()),
 	}),
+	planilhaQuery: t.Object({
+		tipo: t.Optional(
+			t.Union([t.Literal("terreno"), t.Literal("imovel")]),
+		),
+	}),
 	pdf: t.Object({
 		pdf: t.File({
 			maxSize: 10 * 1024 * 1024,

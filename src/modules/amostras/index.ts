@@ -5,13 +5,18 @@ import { AmostrasModel } from "./model";
 import { Amostras } from "./service";
 
 export const amostras = new Elysia({ prefix: "/amostras" })
-	.get("/planilha", async ({ set }) => {
-		const { buffer, filename } = await Amostras.generatePlanilha();
+	.get(
+		"/planilha",
+		async ({ query, set }) => {
+			const { buffer, filename } = await Amostras.generatePlanilha(query.tipo);
 
-		set.headers["Content-Type"] = SPREADSHEET_CONTENT_TYPE;
-		set.headers["Content-Disposition"] = `attachment; filename="${filename}"`;
-		return buffer;
-	})
+			set.headers["Content-Type"] = SPREADSHEET_CONTENT_TYPE;
+			set.headers["Content-Disposition"] =
+				`attachment; filename="${filename}"`;
+			return buffer;
+		},
+		{ query: AmostrasModel.planilhaQuery },
+	)
 	.post("/ia", ({ body }) => Amostras.extractFromPdf(body.pdf), {
 		body: AmostrasModel.pdf,
 	})

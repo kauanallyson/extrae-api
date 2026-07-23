@@ -2,8 +2,8 @@
 
 ## AGORA
 
-- [ ] pensar como adicionar outros indicadores (IDM, PIB PER CAPTA, RENDA DO CHEFE DA FAMILIA, CUB DEPRECIADO, ETC...)
-- [ ] separar terrenos de edificações
+- [ ] adicionar outros indicadores (IDM, PIB PER CAPTA, RENDA DO CHEFE DA FAMILIA, CUB DEPRECIADO, ETC...)
+- [x] separar terrenos de edificações
 - [x] fazer coleta de a413
 - [ ] formulário de coleta de amostras de mercado (verificar informações essenciais como: Padrão de acabamento, número de quartos, coordenadas geográficas e etc...)
 - [x] fazer sistema de login

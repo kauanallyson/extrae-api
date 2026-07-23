@@ -141,7 +141,7 @@ const FIELD_RESOLVERS: Record<
 	dataReferencia: (row) => formatDateBr(row.dataReferencia as string | null),
 };
 
-const PLANILHA_FIELDS = [
+const IMOVEL_FIELDS = [
 	"avaliador",
 	"proponente",
 	"telefone",
@@ -171,6 +171,25 @@ const PLANILHA_FIELDS = [
 	"viaAcesso",
 	"regiaoContexto",
 ] as const;
+
+const TERRENO_FIELDS = [
+	"avaliador",
+	"endereco",
+	"bairro",
+	"municipio",
+	"uf",
+	"coordenadaS",
+	"coordenadaW",
+	"areaTerreno",
+	"valorTerreno",
+	"infraestrutura",
+	"dataReferencia",
+] as const;
+
+const PLANILHA_PRESETS = {
+	imovel: { fields: IMOVEL_FIELDS, filename: "amostras.xlsx" },
+	terreno: { fields: TERRENO_FIELDS, filename: "amostras-terreno.xlsx" },
+} satisfies Record<string, { fields: readonly string[]; filename: string }>;
 
 const RAE_EXCLUDED_FIELDS = new Set([
 	"id",
@@ -415,7 +434,9 @@ export abstract class Amostras {
 		return normalizeContato(parsed);
 	}
 
-	static async generatePlanilha(): Promise<{
+	static async generatePlanilha(
+		tipo: keyof typeof PLANILHA_PRESETS = "imovel",
+	): Promise<{
 		buffer: Buffer;
 		filename: string;
 	}> {
@@ -428,10 +449,12 @@ export abstract class Amostras {
 			.leftJoin(avaliadores, eq(amostras.avaliadorId, avaliadores.id))
 			.orderBy(desc(amostras.createdAt));
 
+		const { fields, filename } = PLANILHA_PRESETS[tipo];
+
 		const workbook = new ExcelJS.Workbook();
 		const sheet = workbook.addWorksheet("Amostras");
 
-		sheet.columns = PLANILHA_FIELDS.map((field) => ({
+		sheet.columns = fields.map((field) => ({
 			header: field,
 			key: field,
 			width: 25,
@@ -441,7 +464,7 @@ export abstract class Amostras {
 		for (const row of rows) {
 			const record = row as Record<string, unknown>;
 			sheet.addRow(
-				PLANILHA_FIELDS.map((field) => {
+				fields.map((field) => {
 					const resolver = FIELD_RESOLVERS[field];
 					return cellValue(resolver ? resolver(record) : record[field]);
 				}),
@@ -449,7 +472,7 @@ export abstract class Amostras {
 		}
 
 		const buffer = await workbook.xlsx.writeBuffer();
-		return { buffer: Buffer.from(buffer), filename: "amostras.xlsx" };
+		return { buffer: Buffer.from(buffer), filename };
 	}
 
 	static async generateRae(id: number): Promise<{
