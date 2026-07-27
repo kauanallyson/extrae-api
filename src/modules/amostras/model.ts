@@ -1,8 +1,7 @@
-import { Type } from "@sinclair/typebox";
 import { relations } from "drizzle-orm";
 import {
-	bigint,
 	char,
+	doublePrecision,
 	integer,
 	pgEnum,
 	pgTable,
@@ -59,18 +58,18 @@ export const amostras = pgTable("amostras", {
 	municipio: text(),
 	uf: char({ length: 2 }),
 	empresaResponsavel: text(),
-	valorTerreno: bigint({ mode: "number" }),
+	valorTerreno: doublePrecision(),
 	matricula: text(),
 	oficio: text(),
 	comarca: text(),
 	ufMatricula: char({ length: 2 }),
-	valorImovel: bigint({ mode: "number" }),
+	valorImovel: doublePrecision(),
 	numeroEtapas: integer(),
-	valorUnitario: bigint({ mode: "number" }),
-	testada: integer(),
+	valorUnitario: doublePrecision(),
+	testada: doublePrecision(),
 	idadeEstimada: text(),
-	areaTerreno: integer(),
-	areaConstruida: integer(),
+	areaTerreno: doublePrecision(),
+	areaConstruida: doublePrecision(),
 	quartos: integer(),
 	banheiros: integer(),
 	suites: integer(),
@@ -99,7 +98,7 @@ export const incidencias = pgTable(
 			.references(() => amostras.id, { onDelete: "cascade" })
 			.notNull(),
 		ordem: integer().notNull(),
-		percentual: integer().notNull(),
+		percentual: doublePrecision().notNull(),
 	},
 	(table) => [unique().on(table.amostraId, table.ordem)],
 );
@@ -112,7 +111,7 @@ export const acumuladosPropostos = pgTable(
 			.references(() => amostras.id, { onDelete: "cascade" })
 			.notNull(),
 		ordem: integer().notNull(),
-		percentual: integer().notNull(),
+		percentual: doublePrecision().notNull(),
 	},
 	(table) => [unique().on(table.amostraId, table.ordem)],
 );
@@ -157,8 +156,8 @@ const extractedInsertSchema = createInsertSchema(amostras, {
 	telefone: t.Nullable(t.String()),
 });
 
-const percentuais = t.Array(Type.Integer());
-const incidencias20 = t.Array(Type.Integer(), {
+const percentuais = t.Array(t.Number());
+const incidencias20 = t.Array(t.Number(), {
 	minItems: 20,
 	maxItems: 20,
 });
@@ -236,7 +235,7 @@ export const AmostrasModel = {
 		},
 		{
 			description:
-				"Valores monetarios em reais (ex.: 2450.51), diferente de valorUnitario nas demais rotas, que responde em centavos. Outliers seguem a regra de Tukey: fora de Q1 - 1.5*IQR ou Q3 + 1.5*IQR.",
+				"Valores monetarios em reais (ex.: 2450.51), na mesma unidade de valorUnitario nas demais rotas. Outliers seguem a regra de Tukey: fora de Q1 - 1.5*IQR ou Q3 + 1.5*IQR.",
 		},
 	),
 } as const;

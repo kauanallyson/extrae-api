@@ -32,11 +32,6 @@ type StatsRow = {
 	outlier_ids: number[];
 };
 
-/** valorUnitario e armazenado em centavos; a API de stats responde em reais. */
-function centsToReais(value: number | null): number | null {
-	return value === null ? null : value / 100;
-}
-
 /**
  * Estatisticas descritivas de valorUnitario, calculadas inteiramente no
  * Postgres. Outliers seguem a regra de Tukey (cercas de 1.5 x IQR).
@@ -76,16 +71,16 @@ export async function valorUnitarioStats(
 		)
 		select
 			f.total,
-			round(f.min)::double precision         as min,
-			round(f.max)::double precision         as max,
-			round(f.mean)::double precision        as mean,
-			round(f.q1)::double precision          as q1,
-			round(f.median)::double precision      as median,
-			round(f.q3)::double precision          as q3,
-			round(f.iqr)::double precision         as iqr,
-			round(f.std_dev)::double precision     as std_dev,
-			round(f.lower_fence)::double precision as lower_fence,
-			round(f.upper_fence)::double precision as upper_fence,
+			round(f.min::numeric, 2)::double precision         as min,
+			round(f.max::numeric, 2)::double precision         as max,
+			round(f.mean::numeric, 2)::double precision        as mean,
+			round(f.q1::numeric, 2)::double precision          as q1,
+			round(f.median::numeric, 2)::double precision      as median,
+			round(f.q3::numeric, 2)::double precision          as q3,
+			round(f.iqr::numeric, 2)::double precision         as iqr,
+			round(f.std_dev::numeric, 2)::double precision     as std_dev,
+			round(f.lower_fence::numeric, 2)::double precision as lower_fence,
+			round(f.upper_fence::numeric, 2)::double precision as upper_fence,
 			coalesce(
 				(select array_agg(v.id) from vals v
 					where v.v < f.lower_fence or v.v > f.upper_fence),
@@ -101,16 +96,16 @@ export async function valorUnitarioStats(
 
 	return {
 		total: row.total,
-		min: centsToReais(row.min),
-		max: centsToReais(row.max),
-		mean: centsToReais(row.mean),
-		median: centsToReais(row.median),
-		q1: centsToReais(row.q1),
-		q3: centsToReais(row.q3),
-		iqr: centsToReais(row.iqr),
-		stdDev: centsToReais(row.std_dev),
-		lowerFence: centsToReais(row.lower_fence),
-		upperFence: centsToReais(row.upper_fence),
+		min: row.min,
+		max: row.max,
+		mean: row.mean,
+		median: row.median,
+		q1: row.q1,
+		q3: row.q3,
+		iqr: row.iqr,
+		stdDev: row.std_dev,
+		lowerFence: row.lower_fence,
+		upperFence: row.upper_fence,
 		outlierIds: row.outlier_ids,
 	};
 }

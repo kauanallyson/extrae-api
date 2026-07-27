@@ -23,6 +23,12 @@ describe("app", () => {
 		return { authorization: `Bearer ${token}` };
 	}
 
+	function randomDigits(length: number): string {
+		return Array.from({ length }, () =>
+			Math.floor(Math.random() * 10),
+		).join("");
+	}
+
 	test("GET /health returns ok", async () => {
 		const response = await app.handle(new Request("http://localhost/health"));
 
@@ -108,6 +114,84 @@ describe("app", () => {
 		expect(await response.json()).toEqual({
 			message: "Informe ao menos um campo para atualizar.",
 		});
+	});
+
+	test("amostra round-trip preserves decimal values", async () => {
+		const headers = {
+			"content-type": "application/json",
+			...(await authHeaders()),
+		};
+
+		const avaliadorResponse = await app.handle(
+			new Request("http://localhost/avaliadores", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					nome: "Avaliador Teste",
+					nomeFantasia: "Teste",
+					cpf: `${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`,
+					cnpj: `${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
+					registroCrea: randomDigits(10),
+				}),
+			}),
+		);
+		expect(avaliadorResponse.status).toBe(201);
+		const { id: avaliadorId } = await avaliadorResponse.json();
+
+		const incidencias = Array.from({ length: 20 }, (_, index) =>
+			index === 0 ? 12.34 : 4.61,
+		);
+		const createResponse = await app.handle(
+			new Request("http://localhost/amostras", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					avaliadorId,
+					valorTerreno: 1234.56,
+					valorImovel: 250000.99,
+					valorUnitario: 2450.51,
+					areaTerreno: 250.5,
+					areaConstruida: 120.75,
+					testada: 10.25,
+					incidencias,
+					acumuladoProposto: [0.5, 33.33, 100],
+				}),
+			}),
+		);
+		expect(createResponse.status).toBe(201);
+		const created = await createResponse.json();
+
+		const getResponse = await app.handle(
+			new Request(`http://localhost/amostras/${created.id}`, {
+				headers: await authHeaders(),
+			}),
+		);
+		expect(getResponse.status).toBe(200);
+		const fetched = await getResponse.json();
+
+		expect(fetched).toMatchObject({
+			valorTerreno: 1234.56,
+			valorImovel: 250000.99,
+			valorUnitario: 2450.51,
+			areaTerreno: 250.5,
+			areaConstruida: 120.75,
+			testada: 10.25,
+			incidencias,
+			acumuladoProposto: [0.5, 33.33, 100],
+		});
+
+		await app.handle(
+			new Request(`http://localhost/amostras/${created.id}`, {
+				method: "DELETE",
+				headers: await authHeaders(),
+			}),
+		);
+		await app.handle(
+			new Request(`http://localhost/avaliadores/${avaliadorId}`, {
+				method: "DELETE",
+				headers: await authHeaders(),
+			}),
+		);
 	});
 
 	test("POST /auth/register creates a user and returns a token", async () => {
