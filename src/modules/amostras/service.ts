@@ -24,6 +24,7 @@ import {
 	type PlanilhaTipo,
 	raeEntries,
 } from "./planilha";
+import { type ValorUnitarioStats, valorUnitarioStats } from "./stats";
 
 function notFound(id: number): never {
 	throw status(404, { message: `Amostra ${id} nao encontrada.` });
@@ -292,5 +293,9 @@ export abstract class Amostras {
 		const safeFirst = sanitizeAsciiWord(rawFirst) || "cliente";
 
 		return { buffer, filename: `dados-rae-${safeFirst}.xlsx` };
+	}
+
+	static async getStats(municipio?: string): Promise<ValorUnitarioStats> {
+		return valorUnitarioStats(municipio);
 	}
 }

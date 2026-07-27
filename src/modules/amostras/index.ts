@@ -11,14 +11,17 @@ export const amostras = new Elysia({ prefix: "/amostras" })
 			const { buffer, filename } = await Amostras.generatePlanilha(query.tipo);
 
 			set.headers["Content-Type"] = SPREADSHEET_CONTENT_TYPE;
-			set.headers["Content-Disposition"] =
-				`attachment; filename="${filename}"`;
+			set.headers["Content-Disposition"] = `attachment; filename="${filename}"`;
 			return buffer;
 		},
 		{ query: AmostrasModel.planilhaQuery },
 	)
 	.post("/ia", ({ body }) => Amostras.extractFromPdf(body.pdf), {
 		body: AmostrasModel.pdf,
+	})
+	.get("/stats", ({ query }) => Amostras.getStats(query.municipio), {
+		query: AmostrasModel.statsQuery,
+		response: AmostrasModel.statsResponse,
 	})
 	.get("/", ({ query }) => Amostras.list(query), {
 		query: AmostrasModel.listQuery,
