@@ -22,8 +22,8 @@ extrair com confiança a partir do documento.
 - Formato: XXºYY'ZZ,ZZZ" (usar º, ' e " obrigatoriamente; separador decimal vírgula)
 
 ## 2. CRONOGRAMA
-**acumuladoProposto:** Primeiro preencha "Pré-executado", depois pegue exatamente o campo "% Acumulado" de cada parcela (o segundo valor de cada linha, não o "% Parcela"). A última parcela preenchida deve ser 100% (=> 10000). Total de linhas = "Número de Parcelas Previstas". Não invente parcelas além das explicitamente listadas com valores.
-**Incidências:** Extraia a coluna "Peso (%)" de "Orçamento Proposto". Retorne EXATAMENTE 20 valores EM PORCENTAGEM (centésimos, ver seção 5), na ordem original da tabela, sem normalizar, sem somar, sem recalcular.
+**acumuladoProposto:** Primeiro preencha "Pré-executado", depois pegue exatamente o campo "% Acumulado" de cada parcela (o segundo valor de cada linha, não o "% Parcela"). A última parcela preenchida deve ser 100% (=> 100). Total de linhas = "Número de Parcelas Previstas". Não invente parcelas além das explicitamente listadas com valores.
+**Incidências:** Extraia a coluna "Peso (%)" de "Orçamento Proposto". Retorne EXATAMENTE 20 valores EM PORCENTAGEM (ver seção 5), na ordem original da tabela, sem normalizar, sem somar, sem recalcular.
 
 ## 3. CAMPOS CLASSIFICÁVEIS
 Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário → "".
@@ -34,7 +34,7 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 - **proponente:** copie o nome literal do campo "Proponente". Se ilegível, retorne "".
 - **cpf:** dígitos com máscara 123.456.789-00
 - **ddd:** apenas dígitos numéricos do campo DDD da identificação (do campo Telefone).
-- **valorUnitario:** do campo "Avaliação Global" (Valor Unitário R$/m²), em centavos (ver seção 5).
+- **valorUnitario:** do campo "Avaliação Global" (Valor Unitário R$/m²), em reais com decimais (ver seção 5).
 - **endereco:** cópia exata do campo "Endereço do Imóvel" (abreviações, números e ordem preservados).
 - **matricula, comarca, ufMatricula:** extraia cada campo separadamente, a partir da seção "DOCUMENTOS" (ex: "Matrícula da unidade 1110 / 1 / CE / GRACA / 31/10/2023").
 - **oficio:** número do ofício do cartório (o número logo após o número da matrícula, ex: em "1110 / 1 / CE" o ofício é "1").
@@ -49,10 +49,10 @@ Retorne valor SOMENTE se explicitamente descrito na amostra. Caso contrário →
 
 ## 5. FORMATAÇÃO
 - Respeite EXATAMENTE os nomes de campo do schema JSON fornecido.
-- Campos numéricos e listas numéricas devem ser JSON integers (nunca strings, nunca decimais), com 2 casas decimais implícitas:
-  - Valores monetários em CENTAVOS: R$ 1.234,56 → 123456
-  - Áreas e testada em centésimos: 250,50 m² → 25050
-  - Percentuais (incidencias, acumuladoProposto) em centésimos de %: 12,34% → 1234; 100% → 10000
+- Campos numéricos e listas numéricas devem ser JSON numbers (nunca strings), usando ponto como separador decimal:
+  - Valores monetários em REAIS: R$ 1.234,56 → 1234.56
+  - Áreas e testada na unidade original: 250,50 m² → 250.5
+  - Percentuais (incidencias, acumuladoProposto) em % : 12,34% → 12.34; 100% → 100
   - Contagens (quartos, banheiros, suites, vagas, numeroEtapas) permanecem unidades inteiras simples.
 - CPF → 123.456.789-00 | CNPJ → 12.345.678/0001-99
 - Campo ausente ou ilegível: texto → "" | número → 0 | lista → []

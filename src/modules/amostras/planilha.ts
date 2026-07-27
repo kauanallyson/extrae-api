@@ -4,15 +4,6 @@ import { formatDateBr } from "@/utils/strings";
 import { cellValue } from "@/utils/xlsx";
 import type { AmostraComPercentuais } from "./mappers";
 
-const DECIMAL_FIELDS = new Set([
-	"valorTerreno",
-	"valorImovel",
-	"valorUnitario",
-	"areaTerreno",
-	"areaConstruida",
-	"testada",
-]);
-
 const DATE_FIELDS = new Set(["dataReferencia"]);
 
 const RAE_EXCLUDED_FIELDS = new Set([
@@ -23,12 +14,7 @@ const RAE_EXCLUDED_FIELDS = new Set([
 	"updatedAt",
 ]);
 
-function toDecimal(value: unknown): unknown {
-	return typeof value === "number" ? value / 100 : value;
-}
-
 function resolveValue(field: string, value: unknown): unknown {
-	if (DECIMAL_FIELDS.has(field)) return toDecimal(value);
 	if (DATE_FIELDS.has(field)) return formatDateBr(value as string | null);
 	return value;
 }
@@ -153,11 +139,8 @@ export function raeEntries(
 				key,
 				resolveValue(key, value),
 			]),
-		["incidencias", incidencias.map((row) => toDecimal(row.percentual))],
-		[
-			"acumuladoProposto",
-			acumuladosPropostos.map((row) => toDecimal(row.percentual)),
-		],
+		["incidencias", incidencias.map((row) => row.percentual)],
+		["acumuladoProposto", acumuladosPropostos.map((row) => row.percentual)],
 	];
 }
 
