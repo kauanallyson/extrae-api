@@ -198,9 +198,7 @@ export const AmostrasModel = {
 		municipio: t.Optional(t.String()),
 	}),
 	planilhaQuery: t.Object({
-		tipo: t.Optional(
-			t.Union([t.Literal("terreno"), t.Literal("imovel")]),
-		),
+		tipo: t.Optional(t.Union([t.Literal("terreno"), t.Literal("imovel")])),
 	}),
 	pdf: t.Object({
 		pdf: t.File({
@@ -218,6 +216,29 @@ export const AmostrasModel = {
 			camposNaoEncontrados: t.Array(t.String()),
 		}),
 	]),
+	statsQuery: t.Object({
+		municipio: t.Optional(t.String()),
+	}),
+	statsResponse: t.Object(
+		{
+			total: t.Integer(),
+			min: t.Nullable(t.Number()),
+			max: t.Nullable(t.Number()),
+			mean: t.Nullable(t.Number()),
+			median: t.Nullable(t.Number()),
+			q1: t.Nullable(t.Number()),
+			q3: t.Nullable(t.Number()),
+			iqr: t.Nullable(t.Number()),
+			stdDev: t.Nullable(t.Number()),
+			lowerFence: t.Nullable(t.Number()),
+			upperFence: t.Nullable(t.Number()),
+			outlierIds: t.Array(t.Integer()),
+		},
+		{
+			description:
+				"Valores monetarios em reais (ex.: 2450.51), diferente de valorUnitario nas demais rotas, que responde em centavos. Outliers seguem a regra de Tukey: fora de Q1 - 1.5*IQR ou Q3 + 1.5*IQR.",
+		},
+	),
 } as const;
 
 export type SelectAmostra = typeof amostras.$inferSelect;
