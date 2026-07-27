@@ -1,7 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
-import { formatCnpj, formatCpf } from "@/utils/strings";
+import { normalizeDocumentos } from "@/utils/normalize";
 import {
 	type AvaliadoresModel,
 	type AvaliadorSelect,
@@ -10,16 +10,6 @@ import {
 
 function notFound(id: number): never {
 	throw status(404, { message: `Avaliador ${id} nao encontrado.` });
-}
-
-function normalizeDocumentos<T extends { cpf?: string; cnpj?: string }>(
-	data: T,
-): T {
-	return {
-		...data,
-		cpf: formatCpf(data.cpf),
-		cnpj: formatCnpj(data.cnpj),
-	} as T;
 }
 
 export abstract class Avaliadores {
@@ -97,29 +87,27 @@ export abstract class Avaliadores {
 		return row;
 	}
 
-	private static async cpfExists(
-		cpf: string,
-		excludeId?: number,
-	): Promise<boolean> {
-		const clash = eq(avaliadores.cpf, cpf);
-		const where =
-			excludeId === undefined ? clash : and(clash, ne(avaliadores.id, excludeId));
-
-		const [row] = await db
-			.select({ id: avaliadores.id })
-			.from(avaliadores)
-			.where(where)
-			.limit(1);
-		return !!row;
+	private static cpfExists(cpf: string, excludeId?: number): Promise<boolean> {
+		return Avaliadores.documentoExists(avaliadores.cpf, cpf, excludeId);
 	}
 
-	private static async cnpjExists(
+	private static cnpjExists(
 		cnpj: string,
 		excludeId?: number,
 	): Promise<boolean> {
-		const clash = eq(avaliadores.cnpj, cnpj);
+		return Avaliadores.documentoExists(avaliadores.cnpj, cnpj, excludeId);
+	}
+
+	private static async documentoExists(
+		column: typeof avaliadores.cpf | typeof avaliadores.cnpj,
+		value: string,
+		excludeId?: number,
+	): Promise<boolean> {
+		const clash = eq(column, value);
 		const where =
-			excludeId === undefined ? clash : and(clash, ne(avaliadores.id, excludeId));
+			excludeId === undefined
+				? clash
+				: and(clash, ne(avaliadores.id, excludeId));
 
 		const [row] = await db
 			.select({ id: avaliadores.id })
@@ -128,5 +116,4 @@ export abstract class Avaliadores {
 			.limit(1);
 		return !!row;
 	}
-
 }
