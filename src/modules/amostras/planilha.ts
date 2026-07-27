@@ -27,6 +27,12 @@ function toDecimal(value: unknown): unknown {
 	return typeof value === "number" ? value / 100 : value;
 }
 
+function resolveValue(field: string, value: unknown): unknown {
+	if (DECIMAL_FIELDS.has(field)) return toDecimal(value);
+	if (DATE_FIELDS.has(field)) return formatDateBr(value as string | null);
+	return value;
+}
+
 const FIELD_RESOLVERS: Record<
 	string,
 	(row: Record<string, unknown>) => unknown
@@ -37,13 +43,6 @@ const FIELD_RESOLVERS: Record<
 		if (!telefone) return "";
 		return ddd ? `(${ddd}) ${telefone}` : telefone;
 	},
-	valorTerreno: (row) => toDecimal(row.valorTerreno),
-	valorImovel: (row) => toDecimal(row.valorImovel),
-	valorUnitario: (row) => toDecimal(row.valorUnitario),
-	areaTerreno: (row) => toDecimal(row.areaTerreno),
-	areaConstruida: (row) => toDecimal(row.areaConstruida),
-	testada: (row) => toDecimal(row.testada),
-	dataReferencia: (row) => formatDateBr(row.dataReferencia as string | null),
 };
 
 const IMOVEL_FIELDS = [
@@ -126,7 +125,9 @@ export async function buildPlanilhaWorkbook(
 		sheet.addRow(
 			fields.map((field) => {
 				const resolver = FIELD_RESOLVERS[field];
-				return cellValue(resolver ? resolver(row) : row[field]);
+				return cellValue(
+					resolver ? resolver(row) : resolveValue(field, row[field]),
+				);
 			}),
 		);
 	}
@@ -150,11 +151,7 @@ export function raeEntries(
 			.filter(([key]) => !RAE_EXCLUDED_FIELDS.has(key))
 			.map(([key, value]): [string, unknown] => [
 				key,
-				DECIMAL_FIELDS.has(key)
-					? toDecimal(value)
-					: DATE_FIELDS.has(key)
-						? formatDateBr(value as string | null)
-						: value,
+				resolveValue(key, value),
 			]),
 		["incidencias", incidencias.map((row) => toDecimal(row.percentual))],
 		[
