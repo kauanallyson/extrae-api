@@ -8,6 +8,8 @@
 - [ ] formulário de coleta de amostras de mercado (verificar informações essenciais como: Padrão de acabamento, número de quartos, coordenadas geográficas e etc...)
 - [x] fazer sistema de login
 - [x] coletar equação SISDEA
+- [ ] pesquisa "fuzzy"
+- [ ] mostrar estatisticas da cidade por padrao de acabamento
 
 ## EM BREVE
 
