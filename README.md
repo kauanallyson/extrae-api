@@ -10,6 +10,7 @@
 - [x] coletar equação SISDEA
 - [ ] pesquisa "fuzzy"
 - [ ] mostrar estatisticas da cidade por padrao de acabamento
+- [ ] lista das cidades
 
 ## EM BREVE
 
