@@ -8,6 +8,7 @@ import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
 import { normalizeContato } from "@/utils/normalize";
 import { sanitizeAsciiWord } from "@/utils/strings";
+import { cachedStats, invalidateStats } from "./cache";
 import { splitPercentuais, toSelect, withPercentuais } from "./mappers";
 import type { SelectAmostra } from "./model";
 import {
@@ -115,6 +116,8 @@ export abstract class Amostras {
 			return created;
 		});
 
+		await invalidateStats();
+
 		return {
 			...row,
 			incidencias: incidenciasValues ?? [],
@@ -188,6 +191,9 @@ export abstract class Amostras {
 			with: withPercentuais,
 		});
 		if (!withRelations) notFound(id);
+
+		await invalidateStats();
+
 		return toSelect(withRelations);
 	}
 
@@ -199,6 +205,9 @@ export abstract class Amostras {
 		if (!row) notFound(id);
 
 		await db.delete(amostras).where(eq(amostras.id, id));
+
+		await invalidateStats();
+
 		return toSelect(row);
 	}
 
@@ -296,6 +305,6 @@ export abstract class Amostras {
 	}
 
 	static async getStats(municipio?: string): Promise<ValorUnitarioStats> {
-		return valorUnitarioStats(municipio);
+		return cachedStats(municipio, () => valorUnitarioStats(municipio));
 	}
 }

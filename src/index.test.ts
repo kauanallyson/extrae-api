@@ -24,9 +24,9 @@ describe("app", () => {
 	}
 
 	function randomDigits(length: number): string {
-		return Array.from({ length }, () =>
-			Math.floor(Math.random() * 10),
-		).join("");
+		return Array.from({ length }, () => Math.floor(Math.random() * 10)).join(
+			"",
+		);
 	}
 
 	test("GET /health returns ok", async () => {
@@ -59,9 +59,7 @@ describe("app", () => {
 	});
 
 	test("GET /amostras without a token returns 401", async () => {
-		const response = await app.handle(
-			new Request("http://localhost/amostras"),
-		);
+		const response = await app.handle(new Request("http://localhost/amostras"));
 
 		expect(response.status).toBe(401);
 	});
@@ -105,7 +103,10 @@ describe("app", () => {
 		const response = await app.handle(
 			new Request("http://localhost/amostras/1", {
 				method: "PUT",
-				headers: { "content-type": "application/json", ...(await authHeaders()) },
+				headers: {
+					"content-type": "application/json",
+					...(await authHeaders()),
+				},
 				body: JSON.stringify({}),
 			}),
 		);
@@ -194,6 +195,97 @@ describe("app", () => {
 		);
 	});
 
+	test("GET /amostras/stats returns the same payload when served from cache", async () => {
+		const headers = await authHeaders();
+		const url = "http://localhost/amostras/stats";
+
+		const first = await app.handle(new Request(url, { headers }));
+		const second = await app.handle(new Request(url, { headers }));
+
+		expect(first.status).toBe(200);
+		expect(second.status).toBe(200);
+		expect(await second.json()).toEqual(await first.json());
+	});
+
+	test("writing an amostra invalidates the cached stats", async () => {
+		const headers = {
+			"content-type": "application/json",
+			...(await authHeaders()),
+		};
+		// municipio unico isola estas estatisticas de qualquer outro dado
+		const municipio = `Cidade ${crypto.randomUUID()}`;
+		const statsUrl = `http://localhost/amostras/stats?municipio=${encodeURIComponent(municipio)}`;
+
+		const statsFor = async (): Promise<{
+			total: number;
+			mean: number | null;
+		}> => {
+			const response = await app.handle(
+				new Request(statsUrl, { headers: await authHeaders() }),
+			);
+			expect(response.status).toBe(200);
+			return await response.json();
+		};
+
+		// popula o cache com o estado vazio
+		expect(await statsFor()).toMatchObject({ total: 0, mean: null });
+
+		const avaliadorResponse = await app.handle(
+			new Request("http://localhost/avaliadores", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					nome: "Avaliador Teste",
+					nomeFantasia: "Teste",
+					cpf: `${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`,
+					cnpj: `${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
+					registroCrea: randomDigits(10),
+				}),
+			}),
+		);
+		expect(avaliadorResponse.status).toBe(201);
+		const { id: avaliadorId } = await avaliadorResponse.json();
+
+		const createResponse = await app.handle(
+			new Request("http://localhost/amostras", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({ avaliadorId, municipio, valorUnitario: 1500 }),
+			}),
+		);
+		expect(createResponse.status).toBe(201);
+		const created = await createResponse.json();
+
+		// so passa se o POST tiver invalidado a entrada anterior
+		expect(await statsFor()).toMatchObject({ total: 1, mean: 1500 });
+
+		const updateResponse = await app.handle(
+			new Request(`http://localhost/amostras/${created.id}`, {
+				method: "PUT",
+				headers,
+				body: JSON.stringify({ valorUnitario: 2500 }),
+			}),
+		);
+		expect(updateResponse.status).toBe(200);
+		expect(await statsFor()).toMatchObject({ total: 1, mean: 2500 });
+
+		const deleteResponse = await app.handle(
+			new Request(`http://localhost/amostras/${created.id}`, {
+				method: "DELETE",
+				headers: await authHeaders(),
+			}),
+		);
+		expect(deleteResponse.status).toBe(200);
+		expect(await statsFor()).toMatchObject({ total: 0, mean: null });
+
+		await app.handle(
+			new Request(`http://localhost/avaliadores/${avaliadorId}`, {
+				method: "DELETE",
+				headers: await authHeaders(),
+			}),
+		);
+	});
+
 	test("POST /auth/register creates a user and returns a token", async () => {
 		const response = await app.handle(
 			new Request("http://localhost/auth/register", {
@@ -250,13 +342,13 @@ describe("app", () => {
 		);
 
 		expect(response.status).toBe(401);
-		expect(await response.json()).toEqual({ message: "Credenciais inválidas." });
+		expect(await response.json()).toEqual({
+			message: "Credenciais inválidas.",
+		});
 	});
 
 	test("GET /auth/me without a token returns 401", async () => {
-		const response = await app.handle(
-			new Request("http://localhost/auth/me"),
-		);
+		const response = await app.handle(new Request("http://localhost/auth/me"));
 
 		expect(response.status).toBe(401);
 	});
