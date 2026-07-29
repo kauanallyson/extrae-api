@@ -8,14 +8,13 @@
 - [ ] formulário de coleta de amostras de mercado (verificar informações essenciais como: Padrão de acabamento, número de quartos, coordenadas geográficas e etc...)
 - [x] fazer sistema de login
 - [x] coletar equação SISDEA
-- [ ] pesquisa "fuzzy"
 - [ ] mostrar estatisticas da cidade por padrao de acabamento
 - [x] lista das cidades
 
 ## EM BREVE
 
 - [ ] Fazer sistema que recebe um imóvel à ser avaliado e retorna uma estatística/relatorio mais simples para validação empírica.
-- [ ] Box plot completo + lista de imóveis semelhantes em ordem decrescente do mais parecido ao menos
+- [x] Box plot completo + lista de imóveis semelhantes em ordem decrescente do mais parecido ao menos
 - [ ] Criar regras de peso na semelhança e definir quantidade de amostras usadas na análise empiríca
 - [ ] Listar as últimas 50 equações diferentes para edificação e terreno.
 - [ ] Criar algoritimo de decisão de semelhança
