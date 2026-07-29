@@ -78,6 +78,20 @@
       "when": 1785181146591,
       "tag": "0010_wandering_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785327690195,
+      "tag": "0011_municipios_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785327770042,
+      "tag": "0012_municipios_drop_colunas_antigas",
+      "breakpoints": true
     }
   ]
 }

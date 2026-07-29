@@ -1,4 +1,5 @@
 import type { db } from "@/config/db";
+import type { MunicipioSelect } from "@/modules/municipios/model";
 import type { AmostrasModel, SelectAmostra } from "./model";
 
 type AmostrasWith = NonNullable<
@@ -10,18 +11,53 @@ export const withPercentuais = {
 	acumuladosPropostos: {
 		orderBy: (acumuladosPropostos, { asc }) => asc(acumuladosPropostos.ordem),
 	},
+	municipio: true,
 } satisfies AmostrasWith;
 
 export type AmostraComPercentuais = SelectAmostra & {
 	incidencias: { percentual: number }[];
 	acumuladosPropostos: { percentual: number }[];
+	municipio: MunicipioSelect | null;
 };
 
-export function toSelect({
-	incidencias: incidenciasRows,
-	acumuladosPropostos: acumuladoRows,
+type ComMunicipio = {
+	municipio: MunicipioSelect | null;
+	municipioId: number | null;
+};
+
+/** Amostra com municipio e uf de volta como strings planas, sem a chave da FK. */
+export type Achatada<T extends ComMunicipio> = Omit<
+	T,
+	"municipio" | "municipioId"
+> & {
+	municipio: string | null;
+	uf: string | null;
+};
+
+/**
+ * Traz a relacao de volta ao formato plano que a API sempre expos. Necessario
+ * tambem para o RAE: `raeEntries` espalha a amostra inteira em celulas e
+ * despejaria o objeto do municipio numa delas.
+ */
+export function flattenMunicipio<T extends ComMunicipio>({
+	municipio,
+	municipioId: _municipioId,
 	...amostra
-}: AmostraComPercentuais): AmostrasModel["select"] {
+}: T): Achatada<T> {
+	return {
+		...amostra,
+		municipio: municipio?.nome ?? null,
+		uf: municipio?.uf ?? null,
+	} as Achatada<T>;
+}
+
+export function toSelect(row: AmostraComPercentuais): AmostrasModel["select"] {
+	const {
+		incidencias: incidenciasRows,
+		acumuladosPropostos: acumuladoRows,
+		...amostra
+	} = flattenMunicipio(row);
+
 	return {
 		...amostra,
 		incidencias: incidenciasRows.map((row) => row.percentual),

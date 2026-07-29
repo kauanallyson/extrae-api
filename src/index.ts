@@ -6,6 +6,7 @@ import { amostras } from "@/modules/amostras";
 import { auth } from "@/modules/auth";
 import { authGuard } from "@/modules/auth/guard";
 import { avaliadores } from "@/modules/avaliadores";
+import { municipios } from "@/modules/municipios";
 import { firstIssueMessage } from "@/utils/typebox";
 
 export const app = new Elysia()
@@ -40,7 +41,8 @@ export const app = new Elysia()
 	// everything mounted below this line requires a valid Bearer token
 	.use(authGuard)
 	.use(amostras)
-	.use(avaliadores);
+	.use(avaliadores)
+	.use(municipios);
 
 export type App = typeof app;
 

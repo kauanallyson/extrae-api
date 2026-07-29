@@ -35,12 +35,17 @@ type StatsRow = {
 /**
  * Estatisticas descritivas de valorUnitario, calculadas inteiramente no
  * Postgres. Outliers seguem a regra de Tukey (cercas de 1.5 x IQR).
+ *
+ * O recorte por municipio chega ja resolvido em ids - uma lista, porque o mesmo
+ * nome pode existir em mais de uma UF. `= any(array)` e usado no lugar de `in`
+ * justamente porque aceita array vazio: nome que nao resolveu para nenhum
+ * municipio devolve estatisticas zeradas em vez de SQL invalido.
  */
 export async function valorUnitarioStats(
-	municipio?: string,
+	municipioIds?: number[],
 ): Promise<ValorUnitarioStats> {
-	const municipioFilter = municipio
-		? sql`and ${amostras.municipio} = ${municipio}`
+	const municipioFilter = municipioIds
+		? sql`and ${amostras.municipioId} = any(${sql.param(municipioIds)}::int[])`
 		: sql``;
 
 	const result = await db.execute<StatsRow>(sql`

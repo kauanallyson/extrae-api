@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import type { AvaliadorSelect } from "@/modules/avaliadores/model";
 import { formatDateBr } from "@/utils/strings";
 import { cellValue } from "@/utils/xlsx";
-import type { AmostraComPercentuais } from "./mappers";
+import type { Achatada, AmostraComPercentuais } from "./mappers";
 
 const DATE_FIELDS = new Set(["dataReferencia"]);
 
@@ -123,7 +123,7 @@ export async function buildPlanilhaWorkbook(
 }
 
 export function raeEntries(
-	row: AmostraComPercentuais & { avaliador: AvaliadorSelect | null },
+	row: Achatada<AmostraComPercentuais> & { avaliador: AvaliadorSelect | null },
 ): [string, unknown][] {
 	const { avaliador, incidencias, acumuladosPropostos, ...amostra } = row;
 

@@ -13,6 +13,7 @@ import {
 import { createInsertSchema, createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 import { avaliadores } from "@/modules/avaliadores/model";
+import { municipios } from "@/modules/municipios/model";
 import {
 	CEP_REGEX,
 	CNPJ_REGEX,
@@ -55,8 +56,7 @@ export const amostras = pgTable("amostras", {
 	complemento: text(),
 	bairro: text(),
 	cep: char({ length: 9 }),
-	municipio: text(),
-	uf: char({ length: 2 }),
+	municipioId: integer().references(() => municipios.id),
 	empresaResponsavel: text(),
 	valorTerreno: doublePrecision(),
 	matricula: text(),
@@ -121,6 +121,10 @@ export const amostrasRelations = relations(amostras, ({ one, many }) => ({
 		fields: [amostras.avaliadorId],
 		references: [avaliadores.id],
 	}),
+	municipio: one(municipios, {
+		fields: [amostras.municipioId],
+		references: [municipios.id],
+	}),
 	incidencias: many(incidencias),
 	acumuladosPropostos: many(acumuladosPropostos),
 }));
@@ -156,6 +160,20 @@ const extractedInsertSchema = createInsertSchema(amostras, {
 	telefone: t.Nullable(t.String()),
 });
 
+/**
+ * `municipio` e `uf` sairam da tabela para municipios, mas o contrato HTTP
+ * continua plano. Como os schemas sao derivados da tabela, precisam ser
+ * recompostos a mao - sem isso sumiriam em silencio de `insert`, `select` e de
+ * `extracted`, que e o contrato preenchido pela extracao de PDF por IA.
+ */
+const municipioFields = t.Object({
+	municipio: t.Nullable(t.String()),
+	uf: t.Nullable(t.String({ maxLength: 2 })),
+});
+
+/** Resolvida internamente, nunca exposta nem aceita via HTTP. */
+const municipioColumns = ["municipioId"] as const;
+
 const percentuais = t.Array(t.Number());
 const incidencias20 = t.Array(t.Number(), {
 	minItems: 20,
@@ -173,17 +191,29 @@ const percentuaisInsert = t.Object({
 
 export const AmostrasModel = {
 	select: t.Composite([
-		selectSchema,
+		t.Omit(selectSchema, municipioColumns),
+		municipioFields,
 		t.Object({ incidencias: percentuais, acumuladoProposto: percentuais }),
 	]),
 	insert: t.Composite([
-		t.Partial(t.Omit(insertSchema, ["avaliadorId", "createdAt", "updatedAt"])),
+		t.Partial(
+			t.Omit(insertSchema, [
+				"avaliadorId",
+				"createdAt",
+				"updatedAt",
+				...municipioColumns,
+			]),
+		),
+		t.Partial(municipioFields),
 		t.Pick(insertSchema, ["avaliadorId"]),
 		percentuaisInsert,
 	]),
 	update: t.Composite(
 		[
-			t.Partial(t.Omit(insertSchema, ["createdAt", "updatedAt"])),
+			t.Partial(
+				t.Omit(insertSchema, ["createdAt", "updatedAt", ...municipioColumns]),
+			),
+			t.Partial(municipioFields),
 			percentuaisInsert,
 		],
 		{
@@ -207,8 +237,14 @@ export const AmostrasModel = {
 	}),
 	extracted: t.Composite([
 		t.Required(
-			t.Omit(extractedInsertSchema, ["avaliadorId", "createdAt", "updatedAt"]),
+			t.Omit(extractedInsertSchema, [
+				"avaliadorId",
+				"createdAt",
+				"updatedAt",
+				...municipioColumns,
+			]),
 		),
+		municipioFields,
 		t.Object({
 			incidencias: t.Nullable(incidencias20),
 			acumuladoProposto: t.Nullable(percentuais),

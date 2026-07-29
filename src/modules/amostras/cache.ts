@@ -11,11 +11,15 @@ const VERSION_KEY = "amostras:stats:v";
 /** TTL de rede de seguranca: a invalidacao real vem do INCR, nao da expiracao. */
 const TTL_SECONDS = 60 * 60;
 
-function statsKey(version: number, municipio?: string): string {
-	return `amostras:stats:v${version}:${municipio ?? "_all"}`;
+function statsKey(version: number, escopo?: string): string {
+	return `amostras:stats:v${version}:${escopo ?? "_all"}`;
 }
 
-async function currentVersion(): Promise<number | undefined> {
+/**
+ * Versao corrente do cache. Exportada para que outros modulos derivados de
+ * amostras (a lista de municipios) compartilhem a mesma invalidacao.
+ */
+export async function statsVersion(): Promise<number | undefined> {
 	return withRedis("GET versao das stats", async (client) => {
 		const raw = await client.get(VERSION_KEY);
 		if (raw === null) return 0;
@@ -29,15 +33,19 @@ async function currentVersion(): Promise<number | undefined> {
  * Retorna as estatisticas do cache quando disponiveis; caso contrario executa
  * `compute` e guarda o resultado. Redis indisponivel apenas encarece a
  * chamada, nunca a quebra.
+ *
+ * `escopo` identifica o recorte ja resolvido (ids de municipio, nao o nome
+ * digitado), para que grafias diferentes do mesmo municipio compartilhem uma
+ * unica entrada.
  */
 export async function cachedStats(
-	municipio: string | undefined,
+	escopo: string | undefined,
 	compute: () => Promise<ValorUnitarioStats>,
 ): Promise<ValorUnitarioStats> {
-	const version = await currentVersion();
+	const version = await statsVersion();
 	if (version === undefined) return compute();
 
-	const key = statsKey(version, municipio);
+	const key = statsKey(version, escopo);
 
 	const hit = await withRedis("GET stats", (client) => client.get(key));
 	if (hit) {
