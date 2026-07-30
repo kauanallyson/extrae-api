@@ -10,16 +10,6 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
 
-  redis:
-    image: redis:7-alpine
-    container_name: extrae_redis
-    restart: always
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "127.0.0.1:6379:6379"
-
   api:
     build: .
     container_name: extrae_api
@@ -30,10 +20,8 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
     depends_on:
       - db
-      - redis
 
   nginx:
     image: nginx:alpine
@@ -49,4 +37,3 @@ services:
       - api
 volumes:
   postgres_data:
-  redis_data:

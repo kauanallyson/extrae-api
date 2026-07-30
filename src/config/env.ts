@@ -4,7 +4,6 @@ import { t } from "elysia";
 const envSchema = t.Object({
 	PORT: t.Integer({ minimum: 1, maximum: 65535 }),
 	DATABASE_URL: t.String({ minLength: 1, pattern: "^postgres(ql)?://" }),
-	REDIS_URL: t.String({ minLength: 1, pattern: "^rediss?://" }),
 	OPENAI_API_KEY: t.String({ minLength: 1 }),
 	JWT_SECRET: t.String({ minLength: 32 }),
 });
@@ -12,7 +11,6 @@ const envSchema = t.Object({
 export const env = Value.Parse(envSchema, {
 	PORT: process.env.PORT,
 	DATABASE_URL: process.env.DATABASE_URL,
-	REDIS_URL: process.env.REDIS_URL,
 	OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 	JWT_SECRET: process.env.JWT_SECRET,
 });

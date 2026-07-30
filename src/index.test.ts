@@ -195,19 +195,7 @@ describe("app", () => {
 		);
 	});
 
-	test("GET /amostras/stats returns the same payload when served from cache", async () => {
-		const headers = await authHeaders();
-		const url = "http://localhost/amostras/stats";
-
-		const first = await app.handle(new Request(url, { headers }));
-		const second = await app.handle(new Request(url, { headers }));
-
-		expect(first.status).toBe(200);
-		expect(second.status).toBe(200);
-		expect(await second.json()).toEqual(await first.json());
-	});
-
-	test("writing an amostra invalidates the cached stats", async () => {
+	test("writing an amostra is reflected in the stats", async () => {
 		const headers = {
 			"content-type": "application/json",
 			...(await authHeaders()),
@@ -227,7 +215,6 @@ describe("app", () => {
 			return await response.json();
 		};
 
-		// popula o cache com o estado vazio
 		expect(await statsFor()).toMatchObject({ total: 0, mean: null });
 
 		const avaliadorResponse = await app.handle(
@@ -256,7 +243,6 @@ describe("app", () => {
 		expect(createResponse.status).toBe(201);
 		const created = await createResponse.json();
 
-		// so passa se o POST tiver invalidado a entrada anterior
 		expect(await statsFor()).toMatchObject({ total: 1, mean: 1500 });
 
 		const updateResponse = await app.handle(
@@ -349,7 +335,8 @@ describe("app", () => {
 		expect(listaResponse.status).toBe(200);
 		const lista = await listaResponse.json();
 		const registros = lista.filter(
-			(item: { nome: string }) => item.nome.toLowerCase() === nome.toLowerCase(),
+			(item: { nome: string }) =>
+				item.nome.toLowerCase() === nome.toLowerCase(),
 		);
 		expect(registros).toHaveLength(1);
 		expect(registros[0]).toMatchObject({

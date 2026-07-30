@@ -2,7 +2,6 @@ import { asc, count, desc, eq, sql } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
 import { amostras } from "@/modules/amostras/model";
-import { cachedMunicipios } from "./cache";
 import { type MunicipiosModel, municipios, normalizarMunicipio } from "./model";
 
 /** Handle de transacao do drizzle, para reaproveitar a conexao do chamador. */
@@ -10,7 +9,7 @@ export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export abstract class Municipios {
 	static async list(): Promise<MunicipiosModel["listResponse"]> {
-		return cachedMunicipios(() =>
+		return (
 			db
 				.select({
 					id: municipios.id,
@@ -22,7 +21,7 @@ export abstract class Municipios {
 				// left join mantem na lista o municipio que ficou sem amostras
 				.leftJoin(amostras, eq(amostras.municipioId, municipios.id))
 				.groupBy(municipios.id, municipios.nome, municipios.uf)
-				.orderBy(desc(count(amostras.id)), asc(municipios.nome)),
+				.orderBy(desc(count(amostras.id)), asc(municipios.nome))
 		);
 	}
 

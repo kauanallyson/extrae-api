@@ -10,7 +10,6 @@ import { municipios } from "@/modules/municipios/model";
 import { Municipios, type Tx } from "@/modules/municipios/service";
 import { normalizeContato } from "@/utils/normalize";
 import { sanitizeAsciiWord } from "@/utils/strings";
-import { cachedStats, invalidateStats } from "./cache";
 import {
 	flattenMunicipio,
 	splitPercentuais,
@@ -166,8 +165,6 @@ export abstract class Amostras {
 		});
 		if (!withRelations) notFound(row.id);
 
-		await invalidateStats();
-
 		return toSelect(withRelations);
 	}
 
@@ -250,8 +247,6 @@ export abstract class Amostras {
 		});
 		if (!withRelations) notFound(id);
 
-		await invalidateStats();
-
 		return toSelect(withRelations);
 	}
 
@@ -263,8 +258,6 @@ export abstract class Amostras {
 		if (!row) notFound(id);
 
 		await db.delete(amostras).where(eq(amostras.id, id));
-
-		await invalidateStats();
 
 		return toSelect(row);
 	}
@@ -358,7 +351,9 @@ export abstract class Amostras {
 			throw status(404, { message: `Amostra com id: ${id} não encontrada` });
 		}
 
-		const buffer = await buildRaeWorkbook(raeEntries(flattenMunicipio(amostra)));
+		const buffer = await buildRaeWorkbook(
+			raeEntries(flattenMunicipio(amostra)),
+		);
 
 		const rawFirst = amostra.proponente?.trim().split(" ")[0] ?? "";
 		const safeFirst = sanitizeAsciiWord(rawFirst) || "cliente";
@@ -367,13 +362,9 @@ export abstract class Amostras {
 	}
 
 	static async getStats(municipio?: string): Promise<ValorUnitarioStats> {
-		if (municipio === undefined) {
-			return cachedStats(undefined, () => valorUnitarioStats());
-		}
+		if (municipio === undefined) return valorUnitarioStats();
 
-		// chave pelos ids resolvidos, nao pelo nome digitado: assim "Belém" e
-		// "BELEM" compartilham uma unica entrada
 		const ids = await Municipios.findIdsByNome(municipio);
-		return cachedStats(`m${ids.join("-")}`, () => valorUnitarioStats(ids));
+		return valorUnitarioStats(ids);
 	}
 }
