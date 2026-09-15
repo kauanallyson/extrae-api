@@ -292,6 +292,80 @@ describe("app", () => {
 		return (await response.json()).id;
 	}
 
+	test("POST /avaliadores with duplicate CPF returns 409", async () => {
+		const headers = {
+			"content-type": "application/json",
+			...(await authHeaders()),
+		};
+		const cpf = `${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`;
+		const criar = (cnpj: string) =>
+			app.handle(
+				new Request("http://localhost/avaliadores", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						nome: "Avaliador Teste",
+						nomeFantasia: "Teste",
+						cpf,
+						cnpj,
+						registroCrea: randomDigits(10),
+					}),
+				}),
+			);
+
+		const primeira = await criar(
+			`${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
+		);
+		expect(primeira.status).toBe(201);
+
+		const segunda = await criar(
+			`${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
+		);
+		expect(segunda.status).toBe(409);
+	});
+
+	test("PUT /avaliadores/:id with another avaliador's CNPJ returns 409", async () => {
+		const headers = {
+			"content-type": "application/json",
+			...(await authHeaders()),
+		};
+		const cnpj = `${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`;
+		const criar = (cpf: string, cnpjValue: string) =>
+			app.handle(
+				new Request("http://localhost/avaliadores", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						nome: "Avaliador Teste",
+						nomeFantasia: "Teste",
+						cpf,
+						cnpj: cnpjValue,
+						registroCrea: randomDigits(10),
+					}),
+				}),
+			);
+
+		await criar(
+			`${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`,
+			cnpj,
+		);
+		const outroResponse = await criar(
+			`${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`,
+			`${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
+		);
+		const { id: outroId } = await outroResponse.json();
+
+		const updateResponse = await app.handle(
+			new Request(`http://localhost/avaliadores/${outroId}`, {
+				method: "PUT",
+				headers,
+				body: JSON.stringify({ cnpj }),
+			}),
+		);
+
+		expect(updateResponse.status).toBe(409);
+	});
+
 	test("grafias diferentes do mesmo municipio viram um unico registro", async () => {
 		const headers = {
 			"content-type": "application/json",
