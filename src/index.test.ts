@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { app } from "@/index";
+import { guardUniqueWrite } from "@/utils/db";
 
 describe("app", () => {
 	// no seeded test user exists, so register+login a fresh one on every call
@@ -322,6 +323,28 @@ describe("app", () => {
 			`${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}/${randomDigits(4)}-${randomDigits(2)}`,
 		);
 		expect(segunda.status).toBe(409);
+	});
+
+	test("guardUniqueWrite converts a pg 23505 race into 409", async () => {
+		const write = () =>
+			Promise.reject(
+				Object.assign(new Error("duplicate key"), { code: "23505" }),
+			);
+
+		let caught: { code: number; response: { message: string } } | undefined;
+		try {
+			await guardUniqueWrite(
+				write,
+				"Ja existe um avaliador com o CPF ou CNPJ informado.",
+			);
+		} catch (err) {
+			caught = err as typeof caught;
+		}
+
+		expect(caught?.code).toBe(409);
+		expect(caught?.response.message).toBe(
+			"Ja existe um avaliador com o CPF ou CNPJ informado.",
+		);
 	});
 
 	test("PUT /avaliadores/:id with another avaliador's CNPJ returns 409", async () => {
