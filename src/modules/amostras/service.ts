@@ -4,7 +4,6 @@ import { status } from "elysia";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
 import { SYSTEM_PROMPT } from "@/config/prompt";
-import { avaliadores } from "@/modules/avaliadores/model";
 import { Avaliadores } from "@/modules/avaliadores/service";
 import { municipios } from "@/modules/municipios/model";
 import { Municipios, type Tx } from "@/modules/municipios/service";
@@ -28,6 +27,7 @@ import { pdfPagesToImages } from "./pdf";
 import {
 	buildPlanilhaWorkbook,
 	buildRaeWorkbook,
+	type PlanilhaRow,
 	type PlanilhaTipo,
 	raeEntries,
 } from "./planilha";
@@ -56,6 +56,47 @@ async function resolveMunicipioParcial(
 		municipio !== undefined ? municipio : atual?.nome,
 		uf !== undefined ? uf : atual?.uf,
 	);
+}
+
+/**
+ * incidencias e acumuladosPropostos sao substituidos por inteiro: o payload
+ * so tras a lista final ordenada, entao a forma mais simples de refletir
+ * remocoes/reordenacoes e apagar e reinserir com `ordem` recalculada.
+ */
+async function replacePercentuais(
+	tx: Tx,
+	amostraId: number,
+	valores: {
+		incidencias?: number[] | null;
+		acumuladoProposto?: number[] | null;
+	},
+): Promise<void> {
+	if (valores.incidencias !== undefined) {
+		await tx.delete(incidencias).where(eq(incidencias.amostraId, amostraId));
+		if (valores.incidencias?.length) {
+			await tx.insert(incidencias).values(
+				valores.incidencias.map((percentual, index) => ({
+					amostraId,
+					ordem: index + 1,
+					percentual,
+				})),
+			);
+		}
+	}
+	if (valores.acumuladoProposto !== undefined) {
+		await tx
+			.delete(acumuladosPropostos)
+			.where(eq(acumuladosPropostos.amostraId, amostraId));
+		if (valores.acumuladoProposto?.length) {
+			await tx.insert(acumuladosPropostos).values(
+				valores.acumuladoProposto.map((percentual, index) => ({
+					amostraId,
+					ordem: index + 1,
+					percentual,
+				})),
+			);
+		}
+	}
 }
 
 function notFound(id: number): never {
@@ -135,24 +176,10 @@ export abstract class Amostras {
 				throw status(500, { message: "Ocorreu um erro ao salvar a amostra." });
 			}
 
-			if (incidenciasValues?.length) {
-				await tx.insert(incidencias).values(
-					incidenciasValues.map((percentual, index) => ({
-						amostraId: created.id,
-						ordem: index + 1,
-						percentual,
-					})),
-				);
-			}
-			if (acumuladoValues?.length) {
-				await tx.insert(acumuladosPropostos).values(
-					acumuladoValues.map((percentual, index) => ({
-						amostraId: created.id,
-						ordem: index + 1,
-						percentual,
-					})),
-				);
-			}
+			await replacePercentuais(tx, created.id, {
+				incidencias: incidenciasValues,
+				acumuladoProposto: acumuladoValues,
+			});
 
 			return created;
 		});
@@ -211,32 +238,10 @@ export abstract class Amostras {
 			}
 			if (!updated) notFound(id);
 
-			if (incidenciasValues !== undefined) {
-				await tx.delete(incidencias).where(eq(incidencias.amostraId, id));
-				if (incidenciasValues?.length) {
-					await tx.insert(incidencias).values(
-						incidenciasValues.map((percentual, index) => ({
-							amostraId: id,
-							ordem: index + 1,
-							percentual,
-						})),
-					);
-				}
-			}
-			if (acumuladoValues !== undefined) {
-				await tx
-					.delete(acumuladosPropostos)
-					.where(eq(acumuladosPropostos.amostraId, id));
-				if (acumuladoValues?.length) {
-					await tx.insert(acumuladosPropostos).values(
-						acumuladoValues.map((percentual, index) => ({
-							amostraId: id,
-							ordem: index + 1,
-							percentual,
-						})),
-					);
-				}
-			}
+			await replacePercentuais(tx, id, {
+				incidencias: incidenciasValues,
+				acumuladoProposto: acumuladoValues,
+			});
 
 			return updated;
 		});
@@ -322,20 +327,17 @@ export abstract class Amostras {
 		buffer: Buffer;
 		filename: string;
 	}> {
-		const rows = await db
+		const rows: PlanilhaRow[] = await db
 			.select({
 				...getTableColumns(amostras),
-				avaliador: avaliadores.nome,
-				// a planilha le campos planos por nome
 				municipio: municipios.nome,
 				uf: municipios.uf,
 			})
 			.from(amostras)
-			.leftJoin(avaliadores, eq(amostras.avaliadorId, avaliadores.id))
 			.leftJoin(municipios, eq(amostras.municipioId, municipios.id))
 			.orderBy(desc(amostras.createdAt));
 
-		return buildPlanilhaWorkbook(tipo, rows as Record<string, unknown>[]);
+		return buildPlanilhaWorkbook(tipo, rows);
 	}
 
 	static async generateRae(id: number): Promise<{

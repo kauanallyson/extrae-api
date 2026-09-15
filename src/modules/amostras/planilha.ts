@@ -3,6 +3,18 @@ import type { AvaliadorSelect } from "@/modules/avaliadores/model";
 import { formatDateBr } from "@/utils/strings";
 import { cellValue } from "@/utils/xlsx";
 import type { Achatada, AmostraComPercentuais } from "./mappers";
+import type { SelectAmostra } from "./model";
+
+/**
+ * Linha plana que a planilha consome: colunas de amostras, sem a FK de
+ * municipio, com municipio/uf ja resolvidos como texto. Os campos das
+ * planilhas sao tipados contra essa forma para que um nome trocado (como o
+ * que motivou este comentario) vire erro de compilacao, nao coluna vazia.
+ */
+export type PlanilhaRow = Omit<SelectAmostra, "municipioId"> & {
+	municipio: string | null;
+	uf: string | null;
+};
 
 const DATE_FIELDS = new Set(["dataReferencia"]);
 
@@ -19,9 +31,8 @@ function resolveValue(field: string, value: unknown): unknown {
 	return value;
 }
 
-const FIELD_RESOLVERS: Record<
-	string,
-	(row: Record<string, unknown>) => unknown
+const FIELD_RESOLVERS: Partial<
+	Record<keyof PlanilhaRow, (row: PlanilhaRow) => unknown>
 > = {
 	telefone: (row) => {
 		const ddd = row.ddd ? String(row.ddd) : "";
@@ -32,7 +43,7 @@ const FIELD_RESOLVERS: Record<
 };
 
 const IMOVEL_FIELDS = [
-	"avaliador",
+	"empresaResponsavel",
 	"proponente",
 	"telefone",
 	"endereco",
@@ -60,10 +71,10 @@ const IMOVEL_FIELDS = [
 	"usosPredominantes",
 	"viaAcesso",
 	"regiaoContexto",
-] as const;
+] as const satisfies readonly (keyof PlanilhaRow)[];
 
 const TERRENO_FIELDS = [
-	"avaliador",
+	"empresaResponsavel",
 	"endereco",
 	"bairro",
 	"municipio",
@@ -74,7 +85,7 @@ const TERRENO_FIELDS = [
 	"valorTerreno",
 	"infraestrutura",
 	"dataReferencia",
-] as const;
+] as const satisfies readonly (keyof PlanilhaRow)[];
 
 export const PLANILHA_PRESETS = {
 	imovel: { fields: IMOVEL_FIELDS, filename: "amostras.xlsx" },
@@ -100,7 +111,7 @@ function createSheet(
 
 export async function buildPlanilhaWorkbook(
 	tipo: PlanilhaTipo,
-	rows: Record<string, unknown>[],
+	rows: PlanilhaRow[],
 ): Promise<{ buffer: Buffer; filename: string }> {
 	const { fields, filename } = PLANILHA_PRESETS[tipo];
 
