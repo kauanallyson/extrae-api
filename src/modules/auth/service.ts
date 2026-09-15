@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
 import { type UsuarioSelect, usuarios } from "@/modules/usuarios/model";
+import { guardUniqueWrite } from "@/utils/db";
 import type { AuthModel } from "./model";
 
 export type PublicUser = Pick<UsuarioSelect, "id" | "nome" | "email">;
@@ -18,18 +19,14 @@ export abstract class Auth {
 		}
 
 		const senhaHash = await Bun.password.hash(data.senha);
-		let row: UsuarioSelect | undefined;
-		try {
-			[row] = await db
-				.insert(usuarios)
-				.values({ nome: data.nome, email: data.email, senhaHash })
-				.returning();
-		} catch (err) {
-			if (err instanceof Error && "code" in err && err.code === "23505") {
-				throw status(409, { message: "Já existe um usuário com este e-mail." });
-			}
-			throw err;
-		}
+		const [row] = await guardUniqueWrite(
+			() =>
+				db
+					.insert(usuarios)
+					.values({ nome: data.nome, email: data.email, senhaHash })
+					.returning(),
+			"Já existe um usuário com este e-mail.",
+		);
 
 		if (!row) {
 			throw status(500, { message: "Ocorreu um erro ao criar o usuário." });

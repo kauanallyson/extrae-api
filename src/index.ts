@@ -4,7 +4,6 @@ import { Elysia } from "elysia";
 import { env } from "@/config/env";
 import { amostras } from "@/modules/amostras";
 import { auth } from "@/modules/auth";
-import { authGuard } from "@/modules/auth/guard";
 import { avaliadores } from "@/modules/avaliadores";
 import { municipios } from "@/modules/municipios";
 import { firstIssueMessage } from "@/utils/typebox";
@@ -38,8 +37,8 @@ export const app = new Elysia()
 	})
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)
-	// everything mounted below this line requires a valid Bearer token
-	.use(authGuard)
+	// cada modulo abaixo declara seu proprio .use(authGuard) - protegido e
+	// propriedade do router, nao ordem de montagem aqui
 	.use(amostras)
 	.use(avaliadores)
 	.use(municipios);

@@ -1,6 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { status } from "elysia";
 import { db } from "@/config/db";
+import { guardUniqueWrite } from "@/utils/db";
 import { normalizeDocumentos } from "@/utils/normalize";
 import {
 	type AvaliadoresModel,
@@ -48,7 +49,10 @@ export abstract class Avaliadores {
 			throw status(409, { message: "Ja existe um avaliador com este CNPJ." });
 		}
 
-		const [row] = await db.insert(avaliadores).values(values).returning();
+		const [row] = await guardUniqueWrite(
+			() => db.insert(avaliadores).values(values).returning(),
+			"Ja existe um avaliador com o CPF ou CNPJ informado.",
+		);
 		if (!row) {
 			throw status(500, { message: "Ocorreu um erro ao salvar o avaliador." });
 		}
@@ -67,11 +71,15 @@ export abstract class Avaliadores {
 			throw status(409, { message: "Ja existe um avaliador com este CNPJ." });
 		}
 
-		const [row] = await db
-			.update(avaliadores)
-			.set(values)
-			.where(eq(avaliadores.id, id))
-			.returning();
+		const [row] = await guardUniqueWrite(
+			() =>
+				db
+					.update(avaliadores)
+					.set(values)
+					.where(eq(avaliadores.id, id))
+					.returning(),
+			"Ja existe um avaliador com o CPF ou CNPJ informado.",
+		);
 
 		if (!row) notFound(id);
 		return row;
