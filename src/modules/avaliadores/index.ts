@@ -1,9 +1,11 @@
 import { Elysia } from "elysia";
+import { authGuard } from "@/modules/auth/guard";
 import { idParamsSchema } from "@/utils/typebox";
 import { AvaliadoresModel } from "./model";
 import { Avaliadores } from "./service";
 
 export const avaliadores = new Elysia({ prefix: "/avaliadores" })
+	.use(authGuard)
 	.get("/", () => Avaliadores.list())
 	.get("/:id", ({ params: { id } }) => Avaliadores.getById(id), {
 		params: idParamsSchema,

@@ -1,10 +1,12 @@
 import { Elysia } from "elysia";
+import { authGuard } from "@/modules/auth/guard";
 import { idParamsSchema } from "@/utils/typebox";
 import { SPREADSHEET_CONTENT_TYPE } from "@/utils/xlsx";
 import { AmostrasModel } from "./model";
 import { Amostras } from "./service";
 
 export const amostras = new Elysia({ prefix: "/amostras" })
+	.use(authGuard)
 	.get(
 		"/planilha",
 		async ({ query, set }) => {
