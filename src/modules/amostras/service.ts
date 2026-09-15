@@ -1,6 +1,7 @@
 import { Value } from "@sinclair/typebox/value";
 import { desc, eq, getTableColumns } from "drizzle-orm";
 import { status } from "elysia";
+import type { OpenAI } from "openai";
 import { db } from "@/config/db";
 import { openai } from "@/config/openai";
 import { SYSTEM_PROMPT } from "@/config/prompt";
@@ -267,10 +268,13 @@ export abstract class Amostras {
 		return toSelect(row);
 	}
 
-	static async extractFromPdf(file: File): Promise<AmostrasModel["extracted"]> {
+	static async extractFromPdf(
+		file: File,
+		client: OpenAI = openai,
+	): Promise<AmostrasModel["extracted"]> {
 		const pageImages = await pdfPagesToImages(file);
 
-		const response = await openai.chat.completions.create({
+		const response = await client.chat.completions.create({
 			model: "gpt-4o",
 			temperature: 0,
 			messages: [
